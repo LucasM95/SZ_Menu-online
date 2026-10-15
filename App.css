@@ -1044,3 +1044,76 @@ body {
 .btn-secundario:hover {
   background: var(--superficie);
 }
+
+/* ---------- WhatsApp flutuante ---------- */
+
+.whatsapp-flutuante {
+  position: fixed;
+  right: clamp(14px, 4vw, 24px);
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 58px;
+  min-width: 58px;
+  padding: 0 15px;
+  border-radius: 999px;
+  background: #128c7e;
+  color: var(--branco);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 18px rgba(18, 140, 126, 0.4);
+  animation: surgir 0.3s ease-out;
+  transition: background-color 0.15s, bottom 0.2s;
+}
+
+.whatsapp-flutuante:hover {
+  background: #0e7266;
+}
+
+/* No computador mostra o texto ao lado do ícone; no celular fica só o círculo */
+.whatsapp-flutuante__texto {
+  white-space: nowrap;
+}
+
+.whatsapp-flutuante--acima-barra {
+  bottom: calc(var(--altura-barra) + 16px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Espaço no fim da página para o botão não cobrir conteúdo */
+.main--com-whatsapp {
+  padding-bottom: 100px;
+}
+
+.main--com-barra.main--com-whatsapp {
+  padding-bottom: calc(var(--altura-barra) + 100px + env(safe-area-inset-bottom, 0px));
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .whatsapp-flutuante {
+    padding: 0;
+    justify-content: center;
+    width: 58px;
+  }
+
+  .whatsapp-flutuante__texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}

@@ -56,7 +56,12 @@ export async function carregarCardapio() {
     request('/empresas'),
   ]);
   // Cada filial atende uma cidade; o resto do app trabalha com "cidades"
-  const cidades = empresas.map((e) => ({ nome: e.cidade, taxa: e.taxa, filial: e.filial }));
+  const cidades = empresas.map((e) => ({
+    nome: e.cidade,
+    taxa: e.taxa,
+    filial: e.filial,
+    whatsapp: e.whatsapp,
+  }));
   return { categorias, produtos, adicionais, tiposPagamento, cidades };
 }
 

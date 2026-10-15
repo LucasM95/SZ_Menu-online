@@ -21,6 +21,7 @@ import Identificacao from './components/Identificacao';
 import Cardapio from './components/Cardapio';
 import ModalAdicionais from './components/ModalAdicionais';
 import BarraCarrinho from './components/BarraCarrinho';
+import BotaoWhatsapp from './components/BotaoWhatsapp';
 import Checkout from './components/Checkout';
 import Revisao from './components/Revisao';
 import Sucesso from './components/Sucesso';
@@ -60,9 +61,8 @@ export default function App() {
       const novos = await carregarCardapio();
       setDados(novos);
       setCarrinho((prev) => sincronizarCarrinho(prev, novos.produtos, novos.adicionais));
-      setCliente((c) =>
-        novos.cidades.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: novos.cidades[0]?.nome || '' }
-      );
+      // O cliente escolhe a cidade (ela define a filial e a taxa); só mantém a salva se ainda existir
+      setCliente((c) => (novos.cidades.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
       setStatusCarga('ok');
     } catch (err) {
       if (!silencioso) {
@@ -93,7 +93,8 @@ export default function App() {
 
   // ---------- Totais ----------
   const subtotal = useMemo(() => arredondar(carrinho.reduce((acc, i) => acc + totalItem(i), 0)), [carrinho]);
-  const taxaEntrega = dados?.cidades.find((c) => c.nome === cliente.cidade)?.taxa ?? 0;
+  const cidadeAtual = dados?.cidades.find((c) => c.nome === cliente.cidade);
+  const taxaEntrega = cidadeAtual?.taxa ?? 0;
   const total = arredondar(subtotal + taxaEntrega);
 
   // ---------- Carrinho ----------
@@ -197,6 +198,8 @@ export default function App() {
 
   // ---------- Render ----------
   const mostrarBarra = etapa === 'cardapio' && carrinho.length > 0;
+  // Na tela de sucesso já existe o botão grande do WhatsApp
+  const mostrarWhatsapp = statusCarga === 'ok' && etapa !== 'sucesso' && Boolean(cidadeAtual?.whatsapp);
 
   let conteudo;
   if (statusCarga === 'carregando') {
@@ -295,7 +298,18 @@ export default function App() {
     <div className="app" translate="no">
       <Header cliente={cliente} mostrarCliente={statusCarga === 'ok' && etapa !== 'identificacao'} />
 
-      <main className={`main ${mostrarBarra ? 'main--com-barra' : ''}`}>{conteudo}</main>
+      <main className={`main ${mostrarBarra ? 'main--com-barra' : ''} ${mostrarWhatsapp ? 'main--com-whatsapp' : ''}`}>
+        {conteudo}
+      </main>
+
+      {mostrarWhatsapp && !produtoModal && (
+        <BotaoWhatsapp
+          key={cidadeAtual.nome}
+          numero={cidadeAtual.whatsapp}
+          cidade={cidadeAtual.nome}
+          acimaDaBarra={mostrarBarra}
+        />
+      )}
 
       {mostrarBarra && (
         <BarraCarrinho quantidade={contarItens(carrinho)} subtotal={subtotal} onAbrir={() => setEtapa('checkout')} />
