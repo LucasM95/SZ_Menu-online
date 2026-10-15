@@ -10,7 +10,7 @@ export default function Sucesso({ pedidoId, linkWhatsapp, onNovoPedido }) {
       {linkWhatsapp ? (
         <>
           <p className="texto-suave">
-            Para confirmar, envie o resumo do pedido para a nossa loja pelo WhatsApp. A mensagem já vai pronta.
+            Caso queira entrar em contato, envie o resumo do pedido para a nossa loja pelo WhatsApp. A mensagem já vai pronta.
           </p>
           <a className="btn-whatsapp" href={linkWhatsapp} target="_blank" rel="noopener noreferrer">
             <MessageCircle size={20} aria-hidden="true" />
