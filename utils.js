@@ -126,6 +126,38 @@ export function descreverPagamento(pagamento, tipos, total) {
     .join('\n');
 }
 
+// ---------- WhatsApp ----------
+
+// Texto do pedido para mandar à filial. *texto* fica em negrito no WhatsApp.
+export function montarMensagemWhatsapp({ pedidoId, cliente, carrinho, subtotal, taxaEntrega, total, descricaoPagamento }) {
+  const linhas = [`*Pedido nº ${pedidoId} - Sanduba do Zé*`, ''];
+
+  linhas.push(`*Cliente:* ${cliente.nome}`);
+  linhas.push(`*WhatsApp:* ${cliente.telefone}`);
+  linhas.push(`*Endereço:* ${cliente.ruaNumero}, ${cliente.cidade}`);
+  if (cliente.referencia) linhas.push(`*Referência:* ${cliente.referencia}`);
+
+  linhas.push('', '*Itens:*');
+  carrinho.forEach((item) => {
+    linhas.push(`${item.quantidade}x ${item.nome} - ${formatarMoeda(totalItem(item))}`);
+    item.adicionais.forEach((ad) => linhas.push(`   + ${ad.quantidade}x ${ad.nome}`));
+    if (item.observacao) linhas.push(`   Obs.: ${item.observacao}`);
+  });
+
+  linhas.push('', `Subtotal: ${formatarMoeda(subtotal)}`);
+  linhas.push(`Entrega: ${formatarMoeda(taxaEntrega)}`);
+  linhas.push(`*Total: ${formatarMoeda(total)}*`);
+  linhas.push('', '*Pagamento:*', descricaoPagamento);
+
+  // toLocaleString usa espaço especial entre "R$" e o valor; trocamos por espaço comum
+  return linhas.join('\n').replace(/\u00a0/g, ' ');
+}
+
+// https://wa.me/ abre o app direto na conversa no celular e o WhatsApp Web no computador
+export function linkWhatsapp(numero, mensagem) {
+  return `https://wa.me/${apenasDigitos(numero)}?text=${encodeURIComponent(mensagem)}`;
+}
+
 // ---------- Armazenamento local ----------
 
 export function lerStorage(chave, padrao) {

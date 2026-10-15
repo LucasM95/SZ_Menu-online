@@ -6,6 +6,8 @@ import {
   contarItens,
   descreverPagamento,
   lerStorage,
+  linkWhatsapp,
+  montarMensagemWhatsapp,
   montarFormasPagamento,
   salvarStorage,
   sincronizarCarrinho,
@@ -49,7 +51,7 @@ export default function App() {
   const [aviso, setAviso] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState('');
-  const [pedidoId, setPedidoId] = useState(null);
+  const [pedidoFinalizado, setPedidoFinalizado] = useState(null); // { id, whatsapp }
 
   // ---------- Carga do cardápio ----------
   const carregar = useCallback(async ({ silencioso = false } = {}) => {
@@ -163,7 +165,20 @@ export default function App() {
     setEnviando(true);
     try {
       const resposta = await enviarPedido(payload);
-      setPedidoId(resposta.idpedido);
+      // Monta a mensagem antes de limpar o carrinho
+      const mensagem = montarMensagemWhatsapp({
+        pedidoId: resposta.idpedido,
+        cliente,
+        carrinho,
+        subtotal,
+        taxaEntrega,
+        total,
+        descricaoPagamento: descreverPagamento(pagamento, dados.tiposPagamento, total),
+      });
+      setPedidoFinalizado({
+        id: resposta.idpedido,
+        whatsapp: resposta.whatsapp ? linkWhatsapp(resposta.whatsapp, mensagem) : null,
+      });
       setCarrinho([]);
       setPagamento(PAGAMENTO_INICIAL);
       setEtapa('sucesso');
@@ -266,9 +281,10 @@ export default function App() {
   } else {
     conteudo = (
       <Sucesso
-        pedidoId={pedidoId}
+        pedidoId={pedidoFinalizado?.id}
+        linkWhatsapp={pedidoFinalizado?.whatsapp}
         onNovoPedido={() => {
-          setPedidoId(null);
+          setPedidoFinalizado(null);
           setEtapa('cardapio');
         }}
       />

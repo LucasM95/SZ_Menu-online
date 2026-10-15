@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { ArrowRight, MapPin, Phone, Navigation, User } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { buscarCliente } from '../api';
-import { apenasDigitos, formatarMoeda, mascaraTelefone } from '../utils';
+import { apenasDigitos, mascaraTelefone } from '../utils';
 
 export default function Identificacao({ cliente, setCliente, cidades, onAvancar }) {
   const [buscando, setBuscando] = useState(false);
@@ -91,8 +91,7 @@ export default function Identificacao({ cliente, setCliente, cidades, onAvancar 
                 aria-pressed={cliente.cidade === c.nome}
                 onClick={() => setCliente((cl) => ({ ...cl, cidade: c.nome }))}
               >
-                <span>{c.nome}</span>
-                <small>Entrega {formatarMoeda(c.taxa)}</small>
+                {c.nome}
               </button>
             ))}
           </div>

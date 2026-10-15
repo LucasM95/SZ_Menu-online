@@ -11,17 +11,32 @@ function mensagemDeErro(data, status) {
   return `Erro inesperado no servidor (${status}).`;
 }
 
+// 60s cobre o "acordar" do Render no plano gratuito; depois disso, desiste e mostra erro
+const TEMPO_LIMITE_MS = 60000;
+
 async function request(path, { method = 'GET', body } = {}) {
+  const controle = new AbortController();
+  const timer = setTimeout(() => controle.abort(), TEMPO_LIMITE_MS);
+
   let res;
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers: body ? { 'Content-Type': 'application/json' } : undefined,
       body: body ? JSON.stringify(body) : undefined,
+      signal: controle.signal,
     });
-  } catch {
+  } catch (err) {
+    console.error(`[API] Falha em ${method} ${API_URL}${path}:`, err);
+    if (err.name === 'AbortError') {
+      throw new Error('O servidor demorou demais para responder. Tente novamente.');
+    }
     throw new Error('Sem conexão com o servidor. Verifique sua internet e tente novamente.');
+  } finally {
+    clearTimeout(timer);
   }
+
+  if (!res.ok) console.error(`[API] ${method} ${path} respondeu ${res.status}`);
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
@@ -33,13 +48,15 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export async function carregarCardapio() {
-  const [categorias, produtos, adicionais, tiposPagamento, cidades] = await Promise.all([
+  const [categorias, produtos, adicionais, tiposPagamento, empresas] = await Promise.all([
     request('/categorias'),
     request('/produtos'),
     request('/produtos/adicionais'),
     request('/tipos-pagamento'),
-    request('/cidades'),
+    request('/empresas'),
   ]);
+  // Cada filial atende uma cidade; o resto do app trabalha com "cidades"
+  const cidades = empresas.map((e) => ({ nome: e.cidade, taxa: e.taxa, filial: e.filial }));
   return { categorias, produtos, adicionais, tiposPagamento, cidades };
 }
 

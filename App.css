@@ -333,11 +333,6 @@ body {
   text-align: center;
 }
 
-.cidade-btn small {
-  font-weight: 500;
-  font-size: 0.72rem;
-  color: var(--texto-suave);
-}
 
 .cidade-btn--ativa {
   border: 2px solid var(--amarelo);
@@ -345,9 +340,6 @@ body {
   color: #78350f;
 }
 
-.cidade-btn--ativa small {
-  color: #78350f;
-}
 
 /* ---------- Cardápio ---------- */
 
@@ -1011,4 +1003,44 @@ body {
   .barra-carrinho__btn > span:nth-child(2) {
     display: none;
   }
+}
+
+/* ---------- Botões da tela de sucesso ---------- */
+
+.btn-whatsapp {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+  background: #128c7e;
+  color: var(--branco);
+  text-decoration: none;
+  padding: 16px 20px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 12px rgba(18, 140, 126, 0.3);
+  transition: background-color 0.15s;
+}
+
+.btn-whatsapp:hover {
+  background: #0e7266;
+}
+
+.btn-secundario {
+  width: 100%;
+  background: none;
+  border: 1px solid var(--borda-forte);
+  color: var(--escuro);
+  padding: 13px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.btn-secundario:hover {
+  background: var(--superficie);
 }
