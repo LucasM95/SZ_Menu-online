@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
-import { arredondar, formatarMoeda } from '../utils';
+import { arredondar, formatarMoeda, fotoUrl } from '../utils';
 
 function Contador({ valor, min = 0, onMudar, rotulo }) {
   return (
@@ -46,10 +46,17 @@ export default function ModalAdicionais({ produto, adicionais, onFechar, onConfi
       onClick={(e) => e.target === e.currentTarget && onFechar()}
     >
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+        {fotoUrl(produto.foto) && (
+          <div className="modal__foto">
+            <img src={fotoUrl(produto.foto)} alt="" width="600" height="600" />
+          </div>
+        )}
+
         <div className="modal__topo">
           <div>
             <h3 id="modal-titulo" className="modal__titulo">{produto.nome}</h3>
-            <p className="texto-suave">{formatarMoeda(produto.preco)}</p>
+            {produto.descricao && <p className="modal__desc">{produto.descricao}</p>}
+            <p className="modal__preco">{formatarMoeda(produto.preco)}</p>
           </div>
           <button type="button" className="btn-fechar" onClick={onFechar} aria-label="Fechar">
             <X size={20} aria-hidden="true" />

@@ -374,31 +374,60 @@ body {
   box-shadow: 0 2px 8px rgba(255, 193, 7, 0.35);
 }
 
+/* Seções dentro da categoria (Artesanais, Tradicionais...) */
+.secao + .secao {
+  margin-top: 28px;
+}
+
+.secao__titulo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+
+.secao__titulo::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background: var(--amarelo);
+  border-radius: 2px;
+}
+
+/* ---------- Cards de produto ---------- */
+
 .grade-produtos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: clamp(10px, 3vw, 18px);
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
 .produto {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
   background: var(--branco);
   border: 1px solid var(--borda);
   border-radius: 14px;
-  padding: 18px;
+  overflow: hidden;
+}
+
+.produto__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  min-width: 0;
 }
 
 .produto__nome {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 800;
-  margin-bottom: 4px;
 }
 
 .produto__desc {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
   color: var(--texto-suave);
 }
 
@@ -406,8 +435,150 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 12px;
-  border-top: 1px solid #f5f5f4;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+/* Fundo escuro como no cardápio impresso: as fotos recortadas ficam em destaque */
+.produto__foto {
+  background: radial-gradient(circle at 50% 55%, #4a1d0f 0%, #2a0a06 70%);
+}
+
+.produto__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Celular: texto à esquerda e foto quadrada à direita (padrão dos apps de delivery) */
+.produto--com-foto {
+  display: grid;
+  grid-template-columns: 1fr 116px;
+}
+
+.produto--com-foto .produto__foto {
+  order: 2;
+  margin: 12px 12px 12px 0;
+  border-radius: 12px;
+  aspect-ratio: 1;
+  align-self: start;
+}
+
+.produto--com-foto .produto__info {
+  padding-right: 12px;
+}
+
+/* No celular o botão vira só o "+" para caber na linha do preço */
+.produto--com-foto .btn-adicionar {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+.produto--com-foto .btn-adicionar__texto {
+  display: none;
+}
+
+/* Tablet e computador: grade com a foto grande em cima */
+@media (min-width: 700px) {
+  .grade-produtos {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  .produto--com-foto {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .produto--com-foto .produto__foto {
+    order: 0;
+    margin: 0;
+    border-radius: 0;
+    aspect-ratio: 4 / 3;
+    align-self: stretch;
+  }
+
+  .produto--com-foto .produto__foto img {
+    padding: 10px;
+    transition: transform 0.25s ease;
+  }
+
+  .produto--com-foto:hover .produto__foto img {
+    transform: scale(1.04);
+  }
+
+  .produto__info,
+  .produto--com-foto .produto__info {
+    flex: 1;
+    padding: 16px 18px 18px;
+  }
+
+  .produto--com-foto .btn-adicionar {
+    width: auto;
+    height: auto;
+    padding: 10px 16px;
+  }
+
+  .produto--com-foto .btn-adicionar__texto {
+    display: inline;
+  }
+}
+
+/* ---------- Lista compacta (bebidas, batatas...) ---------- */
+
+.lista-compacta {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.item-lista {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+}
+
+.item-lista + .item-lista {
+  border-top: 1px solid #f0eeec;
+}
+
+.item-lista__texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-lista__nome {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.item-lista__desc {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.btn-mais {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: var(--amarelo);
+  color: var(--escuro);
+}
+
+.btn-mais:active {
+  transform: scale(0.95);
 }
 
 .preco {
@@ -432,6 +603,33 @@ body {
 
 .btn-adicionar:active {
   transform: scale(0.97);
+}
+
+/* Foto e descrição no topo do modal de adicionais */
+.modal__foto {
+  margin: calc(-1 * clamp(16px, 5vw, 24px)) calc(-1 * clamp(16px, 5vw, 24px)) 0;
+  height: 200px;
+  background: radial-gradient(circle at 50% 55%, #4a1d0f 0%, #2a0a06 70%);
+  flex-shrink: 0;
+}
+
+.modal__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 12px;
+}
+
+.modal__desc {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  margin-top: 4px;
+}
+
+.modal__preco {
+  font-weight: 800;
+  color: var(--laranja);
+  margin-top: 6px;
 }
 
 /* ---------- Quantidade ---------- */

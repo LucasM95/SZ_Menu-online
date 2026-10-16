@@ -131,7 +131,11 @@ export default function Checkout({
               </label>
             </div>
 
-            {!pagamento.multiplos ? (
+            {tiposPagamento.length === 0 ? (
+              <p className="erro-inline">
+                Nenhuma forma de pagamento disponível no momento. Fale com a gente pelo WhatsApp.
+              </p>
+            ) : !pagamento.multiplos ? (
               <>
                 <div className="opcoes-pgto">
                   {tiposPagamento.map((tp) => {

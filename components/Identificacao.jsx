@@ -4,7 +4,7 @@ import logoImg from '../assets/logo.png';
 import { buscarCliente } from '../api';
 import { apenasDigitos, mascaraTelefone } from '../utils';
 
-export default function Identificacao({ cliente, setCliente, cidades, onAvancar }) {
+export default function Identificacao({ cliente, setCliente, cidades, onEscolherCidade, onAvancar }) {
   const [buscando, setBuscando] = useState(false);
   const [erro, setErro] = useState('');
   const ultimaBusca = useRef('');
@@ -89,7 +89,7 @@ export default function Identificacao({ cliente, setCliente, cidades, onAvancar 
                 type="button"
                 className={`cidade-btn ${cliente.cidade === c.nome ? 'cidade-btn--ativa' : ''}`}
                 aria-pressed={cliente.cidade === c.nome}
-                onClick={() => setCliente((cl) => ({ ...cl, cidade: c.nome }))}
+                onClick={() => onEscolherCidade(c.nome)}
               >
                 {c.nome}
               </button>
