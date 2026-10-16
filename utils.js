@@ -21,14 +21,6 @@ export function parseMoeda(texto) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-// ---------- Fotos ----------
-
-// As fotos ficam em public/produtos/ (ex.: "x-tudo.webp"); também aceita URL completa
-export function fotoUrl(foto) {
-  if (!foto) return null;
-  return /^https?:\/\//.test(foto) ? foto : `/produtos/${foto}`;
-}
-
 // ---------- Telefone ----------
 
 export const apenasDigitos = (texto) => String(texto ?? '').replace(/\D/g, '');

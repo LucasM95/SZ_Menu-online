@@ -36,8 +36,7 @@ async function request(path, { method = 'GET', body } = {}) {
     clearTimeout(timer);
   }
 
-  // 404 na busca de cliente é normal (cliente novo); os demais erros vão para o console
-  if (!res.ok && res.status !== 404) console.error(`[API] ${method} ${path} respondeu ${res.status}`);
+  if (!res.ok) console.error(`[API] ${method} ${path} respondeu ${res.status}`);
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
@@ -48,20 +47,22 @@ async function request(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-// Cidades atendidas (cada uma pertence a uma filial)
-export async function carregarEmpresas() {
-  const empresas = await request('/empresas');
-  return empresas.map((e) => ({
+export async function carregarCardapio() {
+  const [categorias, produtos, adicionais, tiposPagamento, empresas] = await Promise.all([
+    request('/categorias'),
+    request('/produtos'),
+    request('/produtos/adicionais'),
+    request('/tipos-pagamento'),
+    request('/empresas'),
+  ]);
+  // Cada filial atende uma cidade; o resto do app trabalha com "cidades"
+  const cidades = empresas.map((e) => ({
     nome: e.cidade,
     taxa: e.taxa,
     filial: e.filial,
     whatsapp: e.whatsapp,
   }));
-}
-
-// Cardápio completo de uma filial: categorias, produtos, adicionais e pagamentos
-export function carregarCardapio(filial) {
-  return request(`/cardapio/${filial}`);
+  return { categorias, produtos, adicionais, tiposPagamento, cidades };
 }
 
 export async function buscarCliente(digitos) {
