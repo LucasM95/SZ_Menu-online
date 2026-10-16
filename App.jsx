@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { carregarCardapio, enviarPedido } from './api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { carregarCardapio, carregarEmpresas, enviarPedido } from './api';
 import {
   PAGAMENTO_INICIAL,
   arredondar,
@@ -35,13 +35,21 @@ function lerClienteSalvo() {
 
 function lerCarrinhoSalvo() {
   const salvo = lerStorage('sdz-carrinho', []);
-  return Array.isArray(salvo) ? salvo.filter((i) => i && i.produtoId) : [];
+  // Cada item guarda a filial: códigos e preços mudam de uma loja para outra
+  return Array.isArray(salvo) ? salvo.filter((i) => i && i.produtoId && i.filial) : [];
 }
 
+const CARDAPIO_VAZIO = { status: 'vazio', filial: null, dados: null, erro: '' };
+
 export default function App() {
-  const [dados, setDados] = useState(null);
-  const [statusCarga, setStatusCarga] = useState('carregando'); // carregando | erro | ok
-  const [erroCarga, setErroCarga] = useState('');
+  // Cidades atendidas (carregadas ao abrir o site)
+  const [cidades, setCidades] = useState([]);
+  const [statusCidades, setStatusCidades] = useState('carregando'); // carregando | erro | ok
+  const [erroCidades, setErroCidades] = useState('');
+
+  // Cardápio da filial da cidade escolhida (carregado ao avançar)
+  const [cardapio, setCardapio] = useState(CARDAPIO_VAZIO);
+  const dados = cardapio.dados;
 
   const [etapa, setEtapa] = useState('identificacao');
   const [cliente, setCliente] = useState(lerClienteSalvo);
@@ -54,28 +62,71 @@ export default function App() {
   const [erroEnvio, setErroEnvio] = useState('');
   const [pedidoFinalizado, setPedidoFinalizado] = useState(null); // { id, whatsapp }
 
-  // ---------- Carga do cardápio ----------
-  const carregar = useCallback(async ({ silencioso = false } = {}) => {
-    if (!silencioso) setStatusCarga('carregando');
+  const carrinhoRef = useRef(carrinho);
+  carrinhoRef.current = carrinho;
+
+  const cidadeAtual = cidades.find((c) => c.nome === cliente.cidade);
+  const filialAtual = cidadeAtual?.filial ?? null;
+
+  // ---------- Carga das cidades ----------
+  const carregarCidades = useCallback(async () => {
+    setStatusCidades('carregando');
     try {
-      const novos = await carregarCardapio();
-      setDados(novos);
-      setCarrinho((prev) => sincronizarCarrinho(prev, novos.produtos, novos.adicionais));
+      const lista = await carregarEmpresas();
+      setCidades(lista);
       // O cliente escolhe a cidade (ela define a filial e a taxa); só mantém a salva se ainda existir
-      setCliente((c) => (novos.cidades.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
-      setStatusCarga('ok');
+      setCliente((c) => (lista.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
+      setStatusCidades('ok');
     } catch (err) {
-      if (!silencioso) {
-        setErroCarga(err.message);
-        setStatusCarga('erro');
-      }
-      throw err;
+      setErroCidades(err.message);
+      setStatusCidades('erro');
     }
   }, []);
 
   useEffect(() => {
-    carregar().catch(() => {});
-  }, [carregar]);
+    carregarCidades();
+  }, [carregarCidades]);
+
+  // ---------- Carga do cardápio da filial ----------
+  const carregarFilial = useCallback(async (filial, { silencioso = false } = {}) => {
+    if (!silencioso) setCardapio({ status: 'carregando', filial, dados: null, erro: '' });
+    try {
+      const novos = await carregarCardapio(filial);
+      setCardapio({ status: 'ok', filial, dados: novos, erro: '' });
+
+      // Itens de outra loja não valem aqui: códigos e preços são diferentes
+      const atual = carrinhoRef.current;
+      const daFilial = atual.filter((i) => i.filial === filial);
+      if (daFilial.length < atual.length) {
+        setAviso('Seu carrinho foi esvaziado: cada loja tem cardápio e preços próprios.');
+      }
+      setCarrinho(sincronizarCarrinho(daFilial, novos.produtos, novos.adicionais));
+      setPagamento(PAGAMENTO_INICIAL);
+    } catch (err) {
+      if (!silencioso) setCardapio({ status: 'erro', filial, dados: null, erro: err.message });
+      throw err;
+    }
+  }, []);
+
+  const abrirCardapio = () => {
+    if (filialAtual && (cardapio.filial !== filialAtual || cardapio.status === 'erro')) {
+      carregarFilial(filialAtual).catch(() => {});
+    }
+    setEtapa('cardapio');
+  };
+
+  const escolherCidade = (nome) => {
+    const nova = cidades.find((c) => c.nome === nome);
+    const filialCarrinho = carrinho[0]?.filial;
+    if (nova && carrinho.length > 0 && filialCarrinho !== nova.filial) {
+      const confirmou = window.confirm(
+        `A loja que atende ${nome} tem cardápio e preços próprios. Trocar de cidade vai esvaziar seu carrinho. Deseja continuar?`
+      );
+      if (!confirmou) return;
+      setCarrinho([]);
+    }
+    setCliente((c) => ({ ...c, cidade: nome }));
+  };
 
   // ---------- Persistência local ----------
   useEffect(() => salvarStorage('sdz-cliente', cliente), [cliente]);
@@ -87,13 +138,12 @@ export default function App() {
 
   useEffect(() => {
     if (!aviso) return undefined;
-    const t = setTimeout(() => setAviso(''), 2200);
+    const t = setTimeout(() => setAviso(''), aviso.length > 40 ? 4500 : 2200);
     return () => clearTimeout(t);
   }, [aviso]);
 
   // ---------- Totais ----------
   const subtotal = useMemo(() => arredondar(carrinho.reduce((acc, i) => acc + totalItem(i), 0)), [carrinho]);
-  const cidadeAtual = dados?.cidades.find((c) => c.nome === cliente.cidade);
   const taxaEntrega = cidadeAtual?.taxa ?? 0;
   const total = arredondar(subtotal + taxaEntrega);
 
@@ -104,6 +154,7 @@ export default function App() {
       {
         cartItemId: `${produto.id}-${Date.now()}`,
         produtoId: produto.id,
+        filial: cardapio.filial,
         nome: produto.nome,
         precoBase: produto.preco,
         quantidade,
@@ -187,7 +238,7 @@ export default function App() {
       setErroEnvio(err.message);
       if (err.status === 409) {
         // Preço ou produto mudou: recarrega o cardápio e volta para o carrinho
-        await carregar({ silencioso: true }).catch(() => {});
+        await carregarFilial(cardapio.filial, { silencioso: true }).catch(() => {});
         setPagamento(PAGAMENTO_INICIAL);
         setEtapa('checkout');
       }
@@ -197,41 +248,54 @@ export default function App() {
   };
 
   // ---------- Render ----------
-  const mostrarBarra = etapa === 'cardapio' && carrinho.length > 0;
+  const cardapioPronto = cardapio.status === 'ok' && cardapio.filial === filialAtual;
+  const mostrarBarra = etapa === 'cardapio' && cardapioPronto && carrinho.length > 0;
   // Na tela de sucesso já existe o botão grande do WhatsApp
-  const mostrarWhatsapp = statusCarga === 'ok' && etapa !== 'sucesso' && Boolean(cidadeAtual?.whatsapp);
+  const mostrarWhatsapp = statusCidades === 'ok' && etapa !== 'sucesso' && Boolean(cidadeAtual?.whatsapp);
+
+  const telaCarregando = (texto) => (
+    <div className="card card--estreito estado-carga" role="status">
+      <div className="spinner" aria-hidden="true" />
+      <p>{texto}</p>
+      <p className="texto-suave">Na primeira visita do dia isso pode levar alguns segundos.</p>
+    </div>
+  );
+
+  const telaErro = (texto, mensagem, tentar) => (
+    <div className="card card--estreito estado-carga">
+      <p className="estado-carga__titulo">{texto}</p>
+      <p className="texto-suave">{mensagem}</p>
+      <button type="button" className="btn-primario" onClick={tentar}>
+        Tentar de novo
+      </button>
+    </div>
+  );
 
   let conteudo;
-  if (statusCarga === 'carregando') {
-    conteudo = (
-      <div className="card card--estreito estado-carga" role="status">
-        <div className="spinner" aria-hidden="true" />
-        <p>Carregando o cardápio…</p>
-        <p className="texto-suave">Na primeira visita do dia isso pode levar alguns segundos.</p>
-      </div>
-    );
-  } else if (statusCarga === 'erro') {
-    conteudo = (
-      <div className="card card--estreito estado-carga">
-        <p className="estado-carga__titulo">Não foi possível carregar o cardápio.</p>
-        <p className="texto-suave">{erroCarga}</p>
-        <button type="button" className="btn-primario" onClick={() => carregar().catch(() => {})}>
-          Tentar de novo
-        </button>
-      </div>
-    );
+  if (statusCidades === 'carregando') {
+    conteudo = telaCarregando('Carregando…');
+  } else if (statusCidades === 'erro') {
+    conteudo = telaErro('Não foi possível abrir o cardápio.', erroCidades, carregarCidades);
   } else if (etapa === 'identificacao') {
     conteudo = (
       <Identificacao
         cliente={cliente}
         setCliente={setCliente}
-        cidades={dados.cidades}
-        onAvancar={() => setEtapa('cardapio')}
+        cidades={cidades}
+        onEscolherCidade={escolherCidade}
+        onAvancar={abrirCardapio}
       />
     );
+  } else if (cardapio.status === 'erro') {
+    conteudo = telaErro('Não foi possível carregar o cardápio.', cardapio.erro, () =>
+      carregarFilial(filialAtual).catch(() => {})
+    );
+  } else if (!cardapioPronto) {
+    conteudo = telaCarregando(`Carregando o cardápio de ${cliente.cidade}…`);
   } else if (etapa === 'cardapio') {
     conteudo = (
       <Cardapio
+        key={cardapio.filial}
         categorias={dados.categorias}
         produtos={dados.produtos}
         onEscolher={escolherProduto}
@@ -296,7 +360,7 @@ export default function App() {
 
   return (
     <div className="app" translate="no">
-      <Header cliente={cliente} mostrarCliente={statusCarga === 'ok' && etapa !== 'identificacao'} />
+      <Header cliente={cliente} mostrarCliente={statusCidades === 'ok' && etapa !== 'identificacao'} />
 
       <main className={`main ${mostrarBarra ? 'main--com-barra' : ''} ${mostrarWhatsapp ? 'main--com-whatsapp' : ''}`}>
         {conteudo}
