@@ -1,0 +1,403 @@
+/* Painel administrativo: visual sóbrio, focado em trabalho rápido */
+
+.adm,
+.adm-login {
+  min-height: 100svh;
+  background: #f5f5f4;
+  color: var(--escuro);
+}
+
+.adm-suave {
+  color: var(--texto-suave);
+  font-size: 0.82rem;
+}
+
+.adm-erro {
+  color: var(--vermelho);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.adm-ok {
+  color: var(--verde);
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.adm-aviso-topo {
+  background: var(--amarelo-claro);
+  text-align: center;
+  padding: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.adm input,
+.adm textarea,
+.adm select,
+.adm-login input,
+.adm-login select {
+  width: 100%;
+  font-size: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--borda-forte);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--escuro);
+}
+
+.adm textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.adm input:focus,
+.adm textarea:focus,
+.adm-login input:focus,
+.adm-login select:focus {
+  outline: none;
+  border-color: var(--amarelo);
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3);
+}
+
+.adm label,
+.adm-login label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 12px 0 4px;
+}
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--borda-forte);
+  background: #fff;
+  color: var(--escuro);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.adm-btn:hover:not(:disabled) {
+  background: var(--superficie);
+}
+
+.adm-btn:disabled {
+  opacity: 0.6;
+}
+
+.adm-btn--primario {
+  background: var(--amarelo);
+  border-color: var(--amarelo);
+}
+
+.adm-btn--primario:hover:not(:disabled) {
+  background: #f5b700;
+}
+
+.adm-btn--perigo {
+  color: var(--vermelho);
+}
+
+/* ---------- Login ---------- */
+
+.adm-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.adm-login__card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-login__card h1 {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.adm-login__card .adm-erro {
+  margin-top: 14px;
+}
+
+.adm-login__card .adm-btn {
+  margin-top: 18px;
+  padding: 12px;
+  font-size: 1rem;
+}
+
+/* ---------- Topo e barra ---------- */
+
+.adm-topo {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px clamp(12px, 4vw, 24px);
+  background: var(--escuro);
+  color: #fff;
+}
+
+.adm-topo > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-topo .adm-suave {
+  color: #d6d3d1;
+}
+
+.adm-conteudo {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px clamp(12px, 4vw, 24px) 60px;
+}
+
+.adm-barra {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.adm-busca {
+  position: relative;
+}
+
+.adm-busca svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--texto-suave);
+}
+
+.adm-busca input {
+  padding-left: 40px;
+}
+
+.adm-filtros {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.adm-filtro {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--borda-forte);
+  background: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.adm-filtro span {
+  color: var(--texto-suave);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.adm-filtro--ativo {
+  background: var(--escuro);
+  border-color: var(--escuro);
+  color: #fff;
+}
+
+.adm-filtro--ativo span {
+  color: var(--amarelo);
+}
+
+/* ---------- Lista ---------- */
+
+.adm-grupo {
+  margin-bottom: 20px;
+}
+
+.adm-grupo h2 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.adm-grupo ul {
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.adm-item + .adm-item {
+  border-top: 1px solid #f0eeec;
+}
+
+.adm-item--aberto {
+  background: #fffdf5;
+}
+
+.adm-item__resumo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+}
+
+.adm-item__texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.adm-item__nome {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.adm-item__icone {
+  color: var(--texto-suave);
+  flex-shrink: 0;
+}
+
+.adm-foto {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #a8a29e;
+  background: radial-gradient(circle at 50% 55%, #4a1d0f 0%, #2a0a06 70%);
+}
+
+.adm-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.adm-foto--grande {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.adm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.adm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--amarelo-claro);
+  color: #78350f;
+}
+
+.adm-tag--cinza {
+  background: #e7e5e4;
+  color: #44403c;
+}
+
+.adm-tag--aviso {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+/* ---------- Editor ---------- */
+
+.adm-editor {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding: 4px 14px 18px;
+}
+
+.adm-editor__foto {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 220px;
+}
+
+.adm-dica {
+  font-size: 0.72rem;
+  color: var(--texto-suave);
+}
+
+.adm-linha {
+  display: grid;
+  grid-template-columns: 1fr 96px;
+  gap: 10px;
+}
+
+.adm-check {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem !important;
+  margin-top: 14px !important;
+  cursor: pointer;
+}
+
+.adm .adm-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--laranja);
+}
+
+.adm-editor__campos .adm-erro,
+.adm-editor__campos .adm-ok {
+  margin-top: 12px;
+}
+
+.adm-editor__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+@media (min-width: 640px) {
+  .adm-editor {
+    grid-template-columns: 200px 1fr;
+  }
+}
