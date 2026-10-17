@@ -1,7 +1,7 @@
 // Em produção (Vercel), defina VITE_API_URL nas variáveis de ambiente do projeto,
 // por exemplo: https://sanduba-api.onrender.com/api
 // Localmente, sem a variável, usa o backend na porta 8080.
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '');
+export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api').replace(/\/$/, '');
 
 function mensagemDeErro(data, status) {
   const detail = data?.detail;
@@ -14,7 +14,7 @@ function mensagemDeErro(data, status) {
 // 60s cobre o "acordar" do Render no plano gratuito; depois disso, desiste e mostra erro
 const TEMPO_LIMITE_MS = 60000;
 
-async function request(path, { method = 'GET', body } = {}) {
+export async function request(path, { method = 'GET', body, token } = {}) {
   const controle = new AbortController();
   const timer = setTimeout(() => controle.abort(), TEMPO_LIMITE_MS);
 
@@ -22,7 +22,10 @@ async function request(path, { method = 'GET', body } = {}) {
   try {
     res = await fetch(`${API_URL}${path}`, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: body ? JSON.stringify(body) : undefined,
       signal: controle.signal,
     });
