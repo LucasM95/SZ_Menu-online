@@ -52,9 +52,22 @@ export const contarItens = (carrinho) => carrinho.reduce((acc, item) => acc + it
 
 // Atualiza nomes e preços do carrinho salvo com o cardápio atual e
 // remove o que saiu do cardápio.
-export function sincronizarCarrinho(carrinho, produtos, adicionais) {
+export function sincronizarCarrinho(carrinho, produtos, adicionais, promocoes = []) {
   return carrinho
     .map((item) => {
+      if (item.promocaoId) {
+        const promo = promocoes.find((p) => p.id === item.promocaoId);
+        if (!promo) return null; // promoção encerrada ou fora do dia
+        return {
+          ...item,
+          nome: promo.nome,
+          precoBase: promo.precoPor,
+          precoDe: promo.precoDe,
+          itensPromocao: promo.itens,
+          adicionais: [],
+          observacao: item.observacao || '',
+        };
+      }
       const produto = produtos.find((p) => p.id === item.produtoId);
       if (!produto) return null;
       const ads = produto.aceitaAdicionais
@@ -147,7 +160,8 @@ export function montarMensagemWhatsapp({ pedidoId, cliente, carrinho, subtotal, 
 
   linhas.push('', '*Itens:*');
   carrinho.forEach((item) => {
-    linhas.push(`${item.quantidade}x ${item.nome} - ${formatarMoeda(totalItem(item))}`);
+    linhas.push(`${item.quantidade}x ${item.promocaoId ? 'PROMOÇÃO ' : ''}${item.nome} - ${formatarMoeda(totalItem(item))}`);
+    (item.itensPromocao || []).forEach((i) => linhas.push(`   - ${i.qtde * item.quantidade}x ${i.nome}`));
     item.adicionais.forEach((ad) => linhas.push(`   + ${ad.quantidade}x ${ad.nome}`));
     if (item.observacao) linhas.push(`   Obs.: ${item.observacao}`);
   });
