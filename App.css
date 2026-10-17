@@ -1494,3 +1494,150 @@ body {
 .carrinho-item__adicionais--promo {
   border-left-color: #2a0a06;
 }
+
+/* ---------- Pedidos em andamento do cliente ---------- */
+
+.acomp-lista {
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+
+.acomp-lista__titulo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.acomp-lista > ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acomp-lista__rodape {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+}
+
+.acomp {
+  background: #2a0a06;
+  color: #fff7ed;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.acomp__topo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.acomp__icone {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--amarelo);
+  color: var(--escuro);
+}
+
+.acomp__titulo {
+  display: flex;
+  flex-direction: column;
+}
+
+.acomp__titulo strong {
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.acomp__titulo span {
+  font-size: 0.82rem;
+  color: #f5d9b8;
+}
+
+/* Linha do tempo: Recebido → Em preparo → Saiu para entrega → Entregue */
+.acomp__etapas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acomp__etapas li {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #a8907a;
+  padding-top: 8px;
+  border-top: 4px solid #4a2a1f;
+  line-height: 1.2;
+}
+
+.acomp__etapas li.feita {
+  color: #fff7ed;
+  border-top-color: var(--amarelo);
+}
+
+.acomp__etapas li.atual {
+  color: var(--amarelo);
+}
+
+.acomp__detalhe {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.acomp__detalhe ul {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.acomp__detalhe small,
+.acomp__detalhe em {
+  color: #f5d9b8;
+}
+
+.acomp__acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.acomp__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: none;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.acomp__btn svg.gira {
+  transform: rotate(180deg);
+}
+
+.acomp__btn--wpp {
+  background: #128c7e;
+  border-color: #128c7e;
+}

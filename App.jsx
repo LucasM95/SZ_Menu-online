@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { carregarCardapio, carregarEmpresas, enviarPedido } from './api';
+import { acompanharPedidos, carregarCardapio, carregarEmpresas, enviarPedido } from './api';
 import {
   PAGAMENTO_INICIAL,
   arredondar,
@@ -25,6 +25,7 @@ import BotaoWhatsapp from './components/BotaoWhatsapp';
 import Checkout from './components/Checkout';
 import Revisao from './components/Revisao';
 import Sucesso from './components/Sucesso';
+import PedidosEmCurso from './components/PedidosEmCurso';
 
 const CLIENTE_VAZIO = { telefone: '', nome: '', cidade: '', ruaNumero: '', referencia: '' };
 
@@ -61,6 +62,10 @@ export default function App() {
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState('');
   const [pedidoFinalizado, setPedidoFinalizado] = useState(null); // { id, whatsapp }
+
+  // Pedidos já feitos com este WhatsApp que ainda não foram entregues
+  const [pedidosEmCurso, setPedidosEmCurso] = useState([]);
+  const [versaoAcompanhamento, setVersaoAcompanhamento] = useState(0);
 
   const carrinhoRef = useRef(carrinho);
   carrinhoRef.current = carrinho;
@@ -127,6 +132,26 @@ export default function App() {
     }
     setCliente((c) => ({ ...c, cidade: nome }));
   };
+
+  // ---------- Acompanhamento de pedidos (a cada 60 s enquanto o site está aberto) ----------
+  const digitosTelefone = cliente.telefone.replace(/\D/g, '');
+  useEffect(() => {
+    if (digitosTelefone.length !== 11) {
+      setPedidosEmCurso([]);
+      return undefined;
+    }
+    let ativo = true;
+    const buscar = () =>
+      acompanharPedidos(digitosTelefone).then((lista) => {
+        if (ativo) setPedidosEmCurso(lista);
+      });
+    buscar();
+    const t = setInterval(buscar, 60000);
+    return () => {
+      ativo = false;
+      clearInterval(t);
+    };
+  }, [digitosTelefone, versaoAcompanhamento]);
 
   // ---------- Persistência local ----------
   useEffect(() => salvarStorage('sdz-cliente', cliente), [cliente]);
@@ -257,6 +282,7 @@ export default function App() {
         total,
         descricaoPagamento: descreverPagamento(pagamento, dados.tiposPagamento, total),
       });
+      setVersaoAcompanhamento((v) => v + 1);
       setPedidoFinalizado({
         id: resposta.idpedido,
         whatsapp: resposta.whatsapp ? linkWhatsapp(resposta.whatsapp, mensagem) : null,
@@ -395,6 +421,9 @@ export default function App() {
       <Header cliente={cliente} mostrarCliente={statusCidades === 'ok' && etapa !== 'identificacao'} />
 
       <main className={`main ${mostrarBarra ? 'main--com-barra' : ''} ${mostrarWhatsapp ? 'main--com-whatsapp' : ''}`}>
+        {statusCidades === 'ok' && (etapa === 'identificacao' || etapa === 'cardapio') && (
+          <PedidosEmCurso pedidos={pedidosEmCurso} />
+        )}
         {conteudo}
       </main>
 

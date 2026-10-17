@@ -79,3 +79,12 @@ export async function buscarCliente(digitos) {
 export function enviarPedido(payload) {
   return request('/pedidos', { method: 'POST', body: payload });
 }
+
+// Pedidos em curso de um WhatsApp (status, itens e total; sem dados pessoais)
+export async function acompanharPedidos(digitos) {
+  try {
+    return await request(`/pedidos/acompanhar/${digitos}`);
+  } catch {
+    return []; // a consulta é um extra: se falhar, o site segue normal
+  }
+}
