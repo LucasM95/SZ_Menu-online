@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, EyeOff, ImageOff, LogOut, Pencil, Search, Tag, Trash2, Upload, UtensilsCrossed, X } from 'lucide-react';
+import { Check, ClipboardList, EyeOff, ImageOff, LogOut, Pencil, Search, Tag, Trash2, Upload, UtensilsCrossed, X } from 'lucide-react';
 import { carregarEmpresas } from '../api';
 import { formatarMoeda, fotoUrl } from '../utils';
 import {
@@ -16,6 +16,7 @@ import {
   salvarPromocao,
   salvarSessao,
 } from './adminApi';
+import Pedidos from './Pedidos';
 import './admin.css';
 
 // Nome do PDV em maiúsculas vira o texto sugerido: "X-TUDO" -> "X-tudo"
@@ -369,7 +370,8 @@ const FILTROS = [
 ];
 
 function Painel({ sessao, onSair }) {
-  const [aba, setAba] = useState('produtos');
+  const podeCardapio = Boolean(sessao.permissoes?.cardapio);
+  const [aba, setAba] = useState('pedidos');
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -380,6 +382,7 @@ function Painel({ sessao, onSair }) {
   const sessaoExpirada = () => onSair('Sua sessão expirou. Entre novamente.');
 
   useEffect(() => {
+    if (!podeCardapio) return;
     listarProdutos(sessao.token)
       .then(setProdutos)
       .catch((err) => (err.status === 401 ? sessaoExpirada() : setErro(err.message)))
@@ -421,25 +424,28 @@ function Painel({ sessao, onSair }) {
 
       <main className="adm-conteudo">
         <nav className="adm-abas" aria-label="Seções do painel">
-          <button
-            type="button"
-            className={`adm-aba ${aba === 'produtos' ? 'adm-aba--ativa' : ''}`}
-            aria-pressed={aba === 'produtos'}
-            onClick={() => setAba('produtos')}
-          >
-            <UtensilsCrossed size={16} aria-hidden="true" /> Produtos
-          </button>
-          <button
-            type="button"
-            className={`adm-aba ${aba === 'promocoes' ? 'adm-aba--ativa' : ''}`}
-            aria-pressed={aba === 'promocoes'}
-            onClick={() => setAba('promocoes')}
-          >
-            <Tag size={16} aria-hidden="true" /> Promoções
-          </button>
+          {[
+            { id: 'pedidos', nome: 'Pedidos', Icone: ClipboardList, mostrar: true },
+            { id: 'produtos', nome: 'Produtos', Icone: UtensilsCrossed, mostrar: podeCardapio },
+            { id: 'promocoes', nome: 'Promoções', Icone: Tag, mostrar: podeCardapio },
+          ]
+            .filter((a) => a.mostrar)
+            .map(({ id, nome, Icone }) => (
+              <button
+                key={id}
+                type="button"
+                className={`adm-aba ${aba === id ? 'adm-aba--ativa' : ''}`}
+                aria-pressed={aba === id}
+                onClick={() => setAba(id)}
+              >
+                <Icone size={16} aria-hidden="true" /> {nome}
+              </button>
+            ))}
         </nav>
 
-        {aba === 'promocoes' ? (
+        {aba === 'pedidos' ? (
+          <Pedidos token={sessao.token} onSessaoExpirada={sessaoExpirada} />
+        ) : aba === 'promocoes' ? (
           <ListaPromocoes token={sessao.token} onSessaoExpirada={sessaoExpirada} />
         ) : (
         <>
@@ -543,7 +549,11 @@ function Painel({ sessao, onSair }) {
 // ---------------------------------------------------------------- Página
 
 export default function Admin() {
-  const [sessao, setSessao] = useState(lerSessao);
+  // Sessão salva antes da aba Pedidos não tem as permissões: pede login de novo
+  const [sessao, setSessao] = useState(() => {
+    const s = lerSessao();
+    return s?.permissoes ? s : null;
+  });
   const [aviso, setAviso] = useState('');
 
   // Página discreta: fora dos buscadores e com título próprio

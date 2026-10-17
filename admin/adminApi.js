@@ -66,3 +66,8 @@ export const enviarFotoPromocao = (token, id, imagem) =>
   request(`/admin/promocoes/${id}/foto`, { method: 'POST', body: { imagem }, token });
 
 export const removerFotoPromocao = (token, id) => request(`/admin/promocoes/${id}/foto`, { method: 'DELETE', token });
+
+export const listarPedidos = (token) => request('/admin/pedidos', { token });
+
+export const mudarStatusPedido = (token, id, status) =>
+  request(`/admin/pedidos/${id}/status`, { method: 'PUT', body: { status }, token });
