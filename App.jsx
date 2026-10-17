@@ -36,7 +36,7 @@ function lerClienteSalvo() {
 function lerCarrinhoSalvo() {
   const salvo = lerStorage('sdz-carrinho', []);
   // Cada item guarda a filial: códigos e preços mudam de uma loja para outra
-  return Array.isArray(salvo) ? salvo.filter((i) => i && i.produtoId && i.filial) : [];
+  return Array.isArray(salvo) ? salvo.filter((i) => i && (i.produtoId || i.promocaoId) && i.filial) : [];
 }
 
 const CARDAPIO_VAZIO = { status: 'vazio', filial: null, dados: null, erro: '' };
@@ -100,7 +100,7 @@ export default function App() {
       if (daFilial.length < atual.length) {
         setAviso('Seu carrinho foi esvaziado: cada loja tem cardápio e preços próprios.');
       }
-      setCarrinho(sincronizarCarrinho(daFilial, novos.produtos, novos.adicionais));
+      setCarrinho(sincronizarCarrinho(daFilial, novos.produtos, novos.adicionais, novos.promocoes));
       setPagamento(PAGAMENTO_INICIAL);
     } catch (err) {
       if (!silencioso) setCardapio({ status: 'erro', filial, dados: null, erro: err.message });
@@ -165,6 +165,32 @@ export default function App() {
     setAviso(`${produto.nome} adicionado`);
   };
 
+  const adicionarPromocao = (promo) => {
+    setCarrinho((prev) => {
+      // Mesma promoção já no carrinho: só aumenta a quantidade
+      const existente = prev.find((i) => i.promocaoId === promo.id);
+      if (existente) {
+        return prev.map((i) => (i === existente ? { ...i, quantidade: i.quantidade + 1 } : i));
+      }
+      return [
+        ...prev,
+        {
+          cartItemId: `promo-${promo.id}-${Date.now()}`,
+          promocaoId: promo.id,
+          filial: cardapio.filial,
+          nome: promo.nome,
+          precoBase: promo.precoPor,
+          precoDe: promo.precoDe,
+          itensPromocao: promo.itens,
+          quantidade: 1,
+          adicionais: [],
+          observacao: '',
+        },
+      ];
+    });
+    setAviso(`Promoção ${promo.nome} adicionada`);
+  };
+
   const escolherProduto = (produto) => {
     if (produto.aceitaAdicionais && dados.adicionais.length > 0) {
       setProdutoModal(produto);
@@ -203,12 +229,16 @@ export default function App() {
         ruaNumero: cliente.ruaNumero.trim(),
         referencia: cliente.referencia.trim(),
       },
-      itens: carrinho.map((i) => ({
-        id: i.produtoId,
-        quantidade: i.quantidade,
-        observacao: (i.observacao || '').trim(),
-        adicionais: i.adicionais.map((a) => ({ id: a.id, quantidade: a.quantidade })),
-      })),
+      itens: carrinho.map((i) =>
+        i.promocaoId
+          ? { promocao: i.promocaoId, quantidade: i.quantidade, observacao: (i.observacao || '').trim() }
+          : {
+              id: i.produtoId,
+              quantidade: i.quantidade,
+              observacao: (i.observacao || '').trim(),
+              adicionais: i.adicionais.map((a) => ({ id: a.id, quantidade: a.quantidade })),
+            }
+      ),
       totalGeral: total,
       formasPagamento: montarFormasPagamento(pagamento, total),
       trocoPara: trocoParaValor(pagamento, dados.tiposPagamento),
@@ -298,7 +328,9 @@ export default function App() {
         key={cardapio.filial}
         categorias={dados.categorias}
         produtos={dados.produtos}
+        promocoes={dados.promocoes}
         onEscolher={escolherProduto}
+        onEscolherPromocao={adicionarPromocao}
         onAlterarDados={() => setEtapa('identificacao')}
       />
     );

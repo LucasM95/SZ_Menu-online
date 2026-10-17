@@ -442,10 +442,14 @@ body {
 
 /* Fundo escuro como no cardápio impresso: as fotos recortadas ficam em destaque */
 .produto__foto {
+  position: relative;
   background: radial-gradient(circle at 50% 55%, #4a1d0f 0%, #2a0a06 70%);
 }
 
+/* Imagem absoluta: quem define a altura é o aspect-ratio do contêiner */
 .produto__foto img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -1314,4 +1318,179 @@ body {
     overflow: hidden;
     clip: rect(0 0 0 0);
   }
+}
+
+/* ---------- Promoções (topo do cardápio) ---------- */
+
+.promocoes {
+  margin-bottom: 22px;
+}
+
+.promocoes__titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  color: var(--escuro);
+}
+
+.promocoes__titulo svg {
+  color: #dc2626;
+}
+
+/* Faixa que rola para o lado; os cards "encaixam" ao soltar o dedo */
+.promocoes__faixa {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overflow-y: hidden;
+  padding: 2px 2px 18px;
+  scrollbar-width: thin;
+}
+
+.promo {
+  flex: 0 0 min(80vw, 290px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  background: #2a0a06;
+  color: #fff7ed;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(42, 10, 6, 0.25);
+}
+
+.promo__foto {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: radial-gradient(circle at 50% 60%, #5a2512 0%, #2a0a06 72%);
+}
+
+.promo__foto img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+}
+
+.promo__selo {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--amarelo);
+  color: var(--escuro);
+  font-weight: 900;
+  font-size: 1rem;
+  padding: 5px 11px;
+  border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+.promo__corpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+}
+
+.promo__nome {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.promo__itens {
+  font-size: 0.83rem;
+  line-height: 1.4;
+  color: #f5d9b8;
+}
+
+.promo__validade {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.promo__validade li {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--amarelo);
+  border: 1px solid rgba(255, 193, 7, 0.5);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.promo__precos {
+  display: flex;
+  flex-direction: column;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.promo__de {
+  font-size: 0.85rem;
+  color: #d6b89a;
+}
+
+.promo__por {
+  font-size: 1.7rem;
+  font-weight: 900;
+  line-height: 1.1;
+  color: var(--amarelo);
+  letter-spacing: -0.02em;
+}
+
+.promo__por small {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f5d9b8;
+  letter-spacing: 0;
+}
+
+.promo__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--amarelo);
+  color: var(--escuro);
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.promo__btn:hover {
+  background: #f5b700;
+}
+
+.promo__btn:focus-visible {
+  outline-color: var(--amarelo);
+}
+
+/* Promoção dentro do carrinho */
+.tag-promo {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #2a0a06;
+  color: var(--amarelo);
+  font-size: 0.7rem;
+  font-weight: 800;
+  vertical-align: 2px;
+}
+
+.carrinho-item__adicionais--promo {
+  border-left-color: #2a0a06;
 }

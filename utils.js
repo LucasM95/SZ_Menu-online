@@ -1,3 +1,5 @@
+import { API_URL } from './api';
+
 // ---------- Dinheiro ----------
 
 export const formatarMoeda = (valor) => {
@@ -23,10 +25,22 @@ export function parseMoeda(texto) {
 
 // ---------- Fotos ----------
 
-// As fotos ficam em public/produtos/ (ex.: "x-tudo.webp"); também aceita URL completa
+// "x-tudo.webp"         -> foto fixa em public/produtos/
+// "upload/f1-p12-ab.webp" -> foto enviada pelo painel (fica no banco, servida pela API)
+// "https://..."           -> URL completa
 export function fotoUrl(foto) {
   if (!foto) return null;
-  return /^https?:\/\//.test(foto) ? foto : `/produtos/${foto}`;
+  if (/^https?:\/\//.test(foto)) return foto;
+  if (foto.startsWith('upload/')) return `${API_URL}/fotos/${foto.slice(7)}`;
+  return `/produtos/${foto}`;
+}
+
+// Máscara de moeda estilo caixa eletrônico: os dígitos entram pela direita.
+// "2" -> "0,02", "25" -> "0,25", "2500" -> "25,00", "123456" -> "1.234,56"
+export function mascaraMoeda(valor) {
+  const digitos = apenasDigitos(valor).replace(/^0+/, '').slice(0, 8);
+  if (!digitos) return '';
+  return (Number(digitos) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ---------- Telefone ----------
@@ -52,9 +66,22 @@ export const contarItens = (carrinho) => carrinho.reduce((acc, item) => acc + it
 
 // Atualiza nomes e preços do carrinho salvo com o cardápio atual e
 // remove o que saiu do cardápio.
-export function sincronizarCarrinho(carrinho, produtos, adicionais) {
+export function sincronizarCarrinho(carrinho, produtos, adicionais, promocoes = []) {
   return carrinho
     .map((item) => {
+      if (item.promocaoId) {
+        const promo = promocoes.find((p) => p.id === item.promocaoId);
+        if (!promo) return null; // promoção encerrada ou fora do dia
+        return {
+          ...item,
+          nome: promo.nome,
+          precoBase: promo.precoPor,
+          precoDe: promo.precoDe,
+          itensPromocao: promo.itens,
+          adicionais: [],
+          observacao: item.observacao || '',
+        };
+      }
       const produto = produtos.find((p) => p.id === item.produtoId);
       if (!produto) return null;
       const ads = produto.aceitaAdicionais
@@ -147,7 +174,8 @@ export function montarMensagemWhatsapp({ pedidoId, cliente, carrinho, subtotal, 
 
   linhas.push('', '*Itens:*');
   carrinho.forEach((item) => {
-    linhas.push(`${item.quantidade}x ${item.nome} - ${formatarMoeda(totalItem(item))}`);
+    linhas.push(`${item.quantidade}x ${item.promocaoId ? 'PROMOÇÃO ' : ''}${item.nome} - ${formatarMoeda(totalItem(item))}`);
+    (item.itensPromocao || []).forEach((i) => linhas.push(`   - ${i.qtde * item.quantidade}x ${i.nome}`));
     item.adicionais.forEach((ad) => linhas.push(`   + ${ad.quantidade}x ${ad.nome}`));
     if (item.observacao) linhas.push(`   Obs.: ${item.observacao}`);
   });
