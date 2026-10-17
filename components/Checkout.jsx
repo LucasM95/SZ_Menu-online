@@ -61,9 +61,22 @@ export default function Checkout({
             {carrinho.map((item) => (
               <li key={item.cartItemId} className="carrinho-item">
                 <div className="carrinho-item__topo">
-                  <span className="carrinho-item__nome">{item.nome}</span>
+                  <span className="carrinho-item__nome">
+                    {item.promocaoId && <span className="tag-promo">Promoção</span>}
+                    {item.nome}
+                  </span>
                   <span className="preco">{formatarMoeda(totalItem(item))}</span>
                 </div>
+
+                {item.itensPromocao && (
+                  <ul className="carrinho-item__adicionais carrinho-item__adicionais--promo">
+                    {item.itensPromocao.map((i) => (
+                      <li key={i.nome}>
+                        {i.qtde * item.quantidade}x {i.nome}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 {item.adicionais.length > 0 && (
                   <ul className="carrinho-item__adicionais">

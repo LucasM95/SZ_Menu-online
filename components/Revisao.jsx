@@ -42,6 +42,11 @@ export default function Revisao({
                   <span>
                     {item.quantidade}x {item.nome}
                   </span>
+                  {(item.itensPromocao || []).map((i) => (
+                    <small key={i.nome}>
+                      {i.qtde * item.quantidade}x {i.nome}
+                    </small>
+                  ))}
                   {item.adicionais.map((ad) => (
                     <small key={ad.id}>
                       + {ad.quantidade}x {ad.nome}

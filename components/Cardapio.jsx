@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { formatarMoeda, fotoUrl } from '../utils';
+import Promocoes from './Promocoes';
 
 // Agrupa os produtos de uma categoria pelas seções (Artesanais, Tradicionais...),
 // mantendo a ordem. Itens sem seção vão para "Outros" quando há outras seções.
@@ -68,7 +69,7 @@ function ItemLista({ produto, onEscolher }) {
   );
 }
 
-export default function Cardapio({ categorias, produtos, onEscolher, onAlterarDados }) {
+export default function Cardapio({ categorias, produtos, promocoes, onEscolher, onEscolherPromocao, onAlterarDados }) {
   // Esconde abas de categorias sem nenhum produto à venda
   const categoriasComProdutos = useMemo(
     () => categorias.filter((cat) => produtos.some((p) => p.categoriaId === cat.id)),
@@ -98,6 +99,8 @@ export default function Cardapio({ categorias, produtos, onEscolher, onAlterarDa
         </div>
       ) : (
         <>
+          <Promocoes promocoes={promocoes} onEscolher={onEscolherPromocao} />
+
           <nav className="categorias" aria-label="Categorias">
             {categoriasComProdutos.map((cat) => (
               <button
