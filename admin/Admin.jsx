@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, EyeOff, ImageOff, LogOut, Pencil, Search, Trash2, Upload, X } from 'lucide-react';
+import { Check, EyeOff, ImageOff, LogOut, Pencil, Search, Tag, Trash2, Upload, UtensilsCrossed, X } from 'lucide-react';
 import { carregarEmpresas } from '../api';
 import { formatarMoeda, fotoUrl } from '../utils';
 import {
   entrar,
   enviarFoto,
+  enviarFotoPromocao,
   lerSessao,
   listarProdutos,
+  listarPromocoes,
   prepararImagem,
   removerFoto,
+  removerFotoPromocao,
   salvarProduto,
+  salvarPromocao,
   salvarSessao,
 } from './adminApi';
 import './admin.css';
@@ -96,20 +100,28 @@ function Login({ onEntrar }) {
   );
 }
 
-// ---------------------------------------------------------------- Editor de um produto
+// ---------------------------------------------------------------- Editor (produto ou promoção)
 
-function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
+// tipo "produto": nome, descrição, seção, ordem, visível e foto
+// tipo "promocao": nome, descrição, ordem, visível e foto
+function Editor({ tipo, item, token, onSalvo, onFechar, onSessaoExpirada }) {
+  const ehPromo = tipo === 'promocao';
+  const id = ehPromo ? item.idpromocao : item.codproduto;
   const [form, setForm] = useState({
-    nome: produto.nome,
-    descricao: produto.descricao,
-    secao: produto.secao,
-    ordem: produto.ordem ?? '',
-    visivel: produto.visivel,
+    nome: item.nome,
+    descricao: item.descricao,
+    secao: item.secao || '',
+    ordem: item.ordem ?? '',
+    visivel: item.visivel,
   });
-  const [foto, setFoto] = useState(produto.foto);
+  const [foto, setFoto] = useState(item.foto);
   const [status, setStatus] = useState({ tipo: '', texto: '' });
   const [ocupado, setOcupado] = useState(false);
   const arquivoRef = useRef(null);
+
+  const api = ehPromo
+    ? { salvar: salvarPromocao, enviar: enviarFotoPromocao, remover: removerFotoPromocao }
+    : { salvar: salvarProduto, enviar: enviarFoto, remover: removerFoto };
 
   const campo = (nome) => (e) =>
     setForm((f) => ({ ...f, [nome]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
@@ -124,7 +136,8 @@ function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
     setStatus({ tipo: '', texto: '' });
     try {
       const dados = { ...form, ordem: form.ordem === '' ? null : Number(form.ordem) };
-      await salvarProduto(token, produto.codproduto, dados);
+      if (ehPromo) delete dados.secao;
+      await api.salvar(token, id, dados);
       onSalvo({ ...dados, foto });
       setStatus({ tipo: 'ok', texto: 'Salvo! Já aparece no cardápio.' });
     } catch (err) {
@@ -142,7 +155,7 @@ function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
     setStatus({ tipo: '', texto: 'Enviando foto…' });
     try {
       const imagem = await prepararImagem(arquivo);
-      const r = await enviarFoto(token, produto.codproduto, imagem);
+      const r = await api.enviar(token, id, imagem);
       setFoto(r.foto);
       onSalvo({ foto: r.foto });
       setStatus({ tipo: 'ok', texto: `Foto atualizada (${r.tamanhoKb} KB).` });
@@ -154,10 +167,10 @@ function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
   };
 
   const tirarFoto = async () => {
-    if (!window.confirm('Remover a foto deste produto?')) return;
+    if (!window.confirm(ehPromo ? 'Remover a foto desta promoção?' : 'Remover a foto deste produto?')) return;
     setOcupado(true);
     try {
-      await removerFoto(token, produto.codproduto);
+      await api.remover(token, id);
       setFoto(null);
       onSalvo({ foto: null });
       setStatus({ tipo: 'ok', texto: 'Foto removida.' });
@@ -168,12 +181,19 @@ function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
     }
   };
 
+  // Promoção sem foto própria usa a do primeiro lanche do combo
+  const fotoExibida = foto || (ehPromo ? item.fotoAutomatica : null);
+  const pfx = `${tipo}-${id}`;
+
   return (
     <div className="adm-editor">
       <div className="adm-editor__foto">
         <div className="adm-foto adm-foto--grande">
-          {fotoUrl(foto) ? <img src={fotoUrl(foto)} alt="" /> : <ImageOff size={28} aria-hidden="true" />}
+          {fotoUrl(fotoExibida) ? <img src={fotoUrl(fotoExibida)} alt="" /> : <ImageOff size={28} aria-hidden="true" />}
         </div>
+        {ehPromo && !foto && item.fotoAutomatica && (
+          <p className="adm-dica">Sem foto própria: o site usa a foto do primeiro lanche do combo.</p>
+        )}
         <input ref={arquivoRef} type="file" accept="image/*" hidden onChange={trocarFoto} />
         <button type="button" className="adm-btn" onClick={() => arquivoRef.current?.click()} disabled={ocupado}>
           <Upload size={16} aria-hidden="true" /> {foto ? 'Trocar foto' : 'Enviar foto'}
@@ -187,41 +207,47 @@ function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
       </div>
 
       <div className="adm-editor__campos">
-        <label htmlFor={`n-${produto.codproduto}`}>Nome no site</label>
+        <label htmlFor={`n-${pfx}`}>Nome no site</label>
         <input
-          id={`n-${produto.codproduto}`}
+          id={`n-${pfx}`}
           value={form.nome}
           maxLength={150}
-          placeholder={sugestaoNome(produto.nomePdv)}
+          placeholder={sugestaoNome(item.nomePdv)}
           onChange={campo('nome')}
         />
 
-        <label htmlFor={`d-${produto.codproduto}`}>Descrição (ingredientes)</label>
+        <label htmlFor={`d-${pfx}`}>{ehPromo ? 'Chamada da promoção' : 'Descrição (ingredientes)'}</label>
         <textarea
-          id={`d-${produto.codproduto}`}
+          id={`d-${pfx}`}
           rows={3}
-          maxLength={500}
+          maxLength={ehPromo ? 300 : 500}
           value={form.descricao}
-          placeholder="Ex.: Pão, hambúrguer 150g, cheddar, bacon e molho do Zé"
+          placeholder={
+            ehPromo
+              ? `Vazio mostra os itens: ${item.itens || 'itens do combo'}`
+              : 'Ex.: Pão, hambúrguer 150g, cheddar, bacon e molho do Zé'
+          }
           onChange={campo('descricao')}
         />
 
-        <div className="adm-linha">
-          <div>
-            <label htmlFor={`s-${produto.codproduto}`}>Seção</label>
-            <input
-              id={`s-${produto.codproduto}`}
-              value={form.secao}
-              maxLength={60}
-              placeholder="Ex.: Artesanais"
-              list="adm-secoes"
-              onChange={campo('secao')}
-            />
-          </div>
+        <div className={ehPromo ? 'adm-linha adm-linha--so-ordem' : 'adm-linha'}>
+          {!ehPromo && (
+            <div>
+              <label htmlFor={`s-${pfx}`}>Seção</label>
+              <input
+                id={`s-${pfx}`}
+                value={form.secao}
+                maxLength={60}
+                placeholder="Ex.: Artesanais"
+                list="adm-secoes"
+                onChange={campo('secao')}
+              />
+            </div>
+          )}
           <div className="adm-linha__ordem">
-            <label htmlFor={`o-${produto.codproduto}`}>Ordem</label>
+            <label htmlFor={`o-${pfx}`}>{ehPromo ? 'Ordem na faixa' : 'Ordem'}</label>
             <input
-              id={`o-${produto.codproduto}`}
+              id={`o-${pfx}`}
               type="number"
               inputMode="numeric"
               min="0"
@@ -255,6 +281,84 @@ function Editor({ produto, token, onSalvo, onFechar, onSessaoExpirada }) {
   );
 }
 
+// ---------------------------------------------------------------- Aba de promoções
+
+function ListaPromocoes({ token, onSessaoExpirada }) {
+  const [promos, setPromos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const [aberta, setAberta] = useState(null);
+
+  useEffect(() => {
+    listarPromocoes(token)
+      .then(setPromos)
+      .catch((err) => (err.status === 401 ? onSessaoExpirada() : setErro(err.message)))
+      .finally(() => setCarregando(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const atualizar = (id, mudancas) =>
+    setPromos((lista) => lista.map((p) => (p.idpromocao === id ? { ...p, ...mudancas } : p)));
+
+  if (carregando) return <p className="adm-suave">Carregando promoções…</p>;
+  if (erro) return <p className="adm-erro">{erro}</p>;
+  if (promos.length === 0) {
+    return <p className="adm-suave">Nenhuma promoção desta loja chegou do PDV ainda.</p>;
+  }
+
+  return (
+    <section className="adm-grupo">
+      <p className="adm-suave adm-explica">
+        Preço, itens, dias e datas vêm do PDV. Aqui você ajusta como a promoção aparece no site.
+      </p>
+      <ul>
+        {promos.map((p) => {
+          const foto = p.foto || p.fotoAutomatica;
+          return (
+            <li key={p.idpromocao} className={`adm-item ${aberta === p.idpromocao ? 'adm-item--aberto' : ''}`}>
+              <button
+                type="button"
+                className="adm-item__resumo"
+                onClick={() => setAberta(aberta === p.idpromocao ? null : p.idpromocao)}
+                aria-expanded={aberta === p.idpromocao}
+              >
+                <div className="adm-foto">
+                  {fotoUrl(foto) ? <img src={fotoUrl(foto)} alt="" loading="lazy" /> : <ImageOff size={18} aria-hidden="true" />}
+                </div>
+                <div className="adm-item__texto">
+                  <span className="adm-item__nome">{p.nome || sugestaoNome(p.nomePdv)}</span>
+                  <span className="adm-suave">
+                    #{p.idpromocao} · {p.itens || 'sem itens'}
+                  </span>
+                  <span className="adm-suave">
+                    {p.precoDe != null && <s>{formatarMoeda(p.precoDe)}</s>} {p.precoPor != null && formatarMoeda(p.precoPor)} · {p.dias}
+                  </span>
+                  <span className="adm-tags">
+                    <span className={`adm-tag ${p.noSite ? 'adm-tag--ok' : 'adm-tag--cinza'}`}>{p.situacao}</span>
+                    {!p.foto && <span className="adm-tag adm-tag--aviso">Sem foto própria</span>}
+                  </span>
+                </div>
+                <Pencil size={16} className="adm-item__icone" aria-hidden="true" />
+              </button>
+
+              {aberta === p.idpromocao && (
+                <Editor
+                  tipo="promocao"
+                  item={p}
+                  token={token}
+                  onSalvo={(m) => atualizar(p.idpromocao, m)}
+                  onFechar={() => setAberta(null)}
+                  onSessaoExpirada={onSessaoExpirada}
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 // ---------------------------------------------------------------- Lista de produtos
 
 const FILTROS = [
@@ -265,6 +369,7 @@ const FILTROS = [
 ];
 
 function Painel({ sessao, onSair }) {
+  const [aba, setAba] = useState('produtos');
   const [produtos, setProdutos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -315,6 +420,29 @@ function Painel({ sessao, onSair }) {
       </header>
 
       <main className="adm-conteudo">
+        <nav className="adm-abas" aria-label="Seções do painel">
+          <button
+            type="button"
+            className={`adm-aba ${aba === 'produtos' ? 'adm-aba--ativa' : ''}`}
+            aria-pressed={aba === 'produtos'}
+            onClick={() => setAba('produtos')}
+          >
+            <UtensilsCrossed size={16} aria-hidden="true" /> Produtos
+          </button>
+          <button
+            type="button"
+            className={`adm-aba ${aba === 'promocoes' ? 'adm-aba--ativa' : ''}`}
+            aria-pressed={aba === 'promocoes'}
+            onClick={() => setAba('promocoes')}
+          >
+            <Tag size={16} aria-hidden="true" /> Promoções
+          </button>
+        </nav>
+
+        {aba === 'promocoes' ? (
+          <ListaPromocoes token={sessao.token} onSessaoExpirada={sessaoExpirada} />
+        ) : (
+        <>
         <div className="adm-barra">
           <div className="adm-busca">
             <Search size={18} aria-hidden="true" />
@@ -392,7 +520,8 @@ function Painel({ sessao, onSair }) {
 
                   {aberto === p.codproduto && (
                     <Editor
-                      produto={p}
+                      tipo="produto"
+                      item={p}
                       token={sessao.token}
                       onSalvo={(m) => atualizar(p.codproduto, m)}
                       onFechar={() => setAberto(null)}
@@ -404,6 +533,8 @@ function Painel({ sessao, onSair }) {
             </ul>
           </section>
         ))}
+        </>
+        )}
       </main>
     </div>
   );

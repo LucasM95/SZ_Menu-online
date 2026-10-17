@@ -56,3 +56,13 @@ export function prepararImagem(arquivo, ladoMax = 1600) {
     leitor.readAsDataURL(arquivo);
   });
 }
+
+export const listarPromocoes = (token) => request('/admin/promocoes', { token });
+
+export const salvarPromocao = (token, id, dados) =>
+  request(`/admin/promocoes/${id}`, { method: 'PUT', body: dados, token });
+
+export const enviarFotoPromocao = (token, id, imagem) =>
+  request(`/admin/promocoes/${id}/foto`, { method: 'POST', body: { imagem }, token });
+
+export const removerFotoPromocao = (token, id) => request(`/admin/promocoes/${id}/foto`, { method: 'DELETE', token });

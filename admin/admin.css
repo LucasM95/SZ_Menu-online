@@ -401,3 +401,44 @@
     grid-template-columns: 200px 1fr;
   }
 }
+
+/* ---------- Abas e promoções ---------- */
+
+.adm-abas {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--borda-forte);
+}
+
+.adm-aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--texto-suave);
+}
+
+.adm-aba--ativa {
+  color: var(--escuro);
+  border-bottom-color: var(--amarelo);
+}
+
+.adm-explica {
+  margin-bottom: 10px;
+}
+
+.adm-tag--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.adm-linha--so-ordem {
+  grid-template-columns: 120px;
+}
