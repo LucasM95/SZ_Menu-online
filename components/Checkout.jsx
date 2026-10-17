@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Check, Minus, Plus } from 'lucide-react';
-import { formatarMoeda, somaPagamentos, totalItem, validarPagamento } from '../utils';
+import { formatarMoeda, mascaraMoeda, somaPagamentos, totalItem, validarPagamento } from '../utils';
 
 export default function Checkout({
   carrinho,
@@ -181,10 +181,10 @@ export default function Checkout({
                         id="troco"
                         className="input"
                         type="text"
-                        inputMode="decimal"
-                        placeholder="100,00"
+                        inputMode="numeric"
+                        placeholder="0,00"
                         value={pagamento.trocoPara}
-                        onChange={(e) => setPagamento((p) => ({ ...p, trocoPara: e.target.value }))}
+                        onChange={(e) => setPagamento((p) => ({ ...p, trocoPara: mascaraMoeda(e.target.value) }))}
                       />
                     </div>
                   </div>
@@ -201,11 +201,14 @@ export default function Checkout({
                         id={`pgto-${tp.id}`}
                         className="input input--pequeno"
                         type="text"
-                        inputMode="decimal"
+                        inputMode="numeric"
                         placeholder="0,00"
                         value={pagamento.valores[tp.id] || ''}
                         onChange={(e) =>
-                          setPagamento((p) => ({ ...p, valores: { ...p.valores, [tp.id]: e.target.value } }))
+                          setPagamento((p) => ({
+                            ...p,
+                            valores: { ...p.valores, [tp.id]: mascaraMoeda(e.target.value) },
+                          }))
                         }
                       />
                     </div>
