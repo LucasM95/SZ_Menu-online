@@ -71,3 +71,6 @@ export const listarPedidos = (token) => request('/admin/pedidos', { token });
 
 export const mudarStatusPedido = (token, id, status) =>
   request(`/admin/pedidos/${id}/status`, { method: 'PUT', body: { status }, token });
+
+export const saidaPorQrCode = (token, codigo) =>
+  request('/admin/pedidos/qrcode', { method: 'POST', body: { codigo }, token });

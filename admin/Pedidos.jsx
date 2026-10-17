@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bike, CheckCheck, ChevronDown, Clock, MessageCircle, RefreshCw, Undo2 } from 'lucide-react';
+import { Ban, Bike, CheckCheck, ChevronDown, Clock, MessageCircle, Printer, QrCode, RefreshCw, Undo2 } from 'lucide-react';
 import { apenasDigitos, formatarMoeda, linkWhatsapp } from '../utils';
 import { listarPedidos, mudarStatusPedido } from './adminApi';
+import { imprimirComanda } from './comanda';
+import LeitorQr from './LeitorQr';
 
 const ATUALIZAR_A_CADA = 30000; // 30 segundos
 const ATRASO_MINUTOS = 45;
@@ -58,6 +60,12 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
 
   const baixar = () => {
     if (window.confirm(`Baixar o pedido nº ${pedido.id}? Ele sai desta lista.`)) onStatus(pedido.id, 'Baixado');
+  };
+
+  const cancelar = () => {
+    if (window.confirm(`CANCELAR o pedido nº ${pedido.id} de ${pedido.cliente}? Ele sai desta lista.`)) {
+      onStatus(pedido.id, 'Cancelado');
+    }
   };
 
   return (
@@ -161,6 +169,15 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
           <CheckCheck size={16} aria-hidden="true" /> Baixar
         </button>
       </div>
+
+      <div className="adm-pedido__acoes-secundarias">
+        <button type="button" className="adm-link" onClick={() => imprimirComanda(pedido)}>
+          <Printer size={14} aria-hidden="true" /> Imprimir comanda
+        </button>
+        <button type="button" className="adm-link adm-link--perigo" disabled={ocupado} onClick={cancelar}>
+          <Ban size={14} aria-hidden="true" /> Cancelar pedido
+        </button>
+      </div>
     </li>
   );
 }
@@ -177,6 +194,7 @@ export default function Pedidos({ token, onSessaoExpirada }) {
   const sairRef = useRef(onSessaoExpirada);
   sairRef.current = onSessaoExpirada;
   const [atualizadoEm, setAtualizadoEm] = useState(null);
+  const [lendoQr, setLendoQr] = useState(false);
 
   const carregar = useCallback(async () => {
     try {
@@ -225,7 +243,9 @@ export default function Pedidos({ token, onSessaoExpirada }) {
         return c;
       });
       setPedidos((lista) =>
-        status === 'Baixado' ? lista.filter((p) => p.id !== id) : lista.map((p) => (p.id === id ? { ...p, status } : p))
+        status === 'Baixado' || status === 'Cancelado'
+          ? lista.filter((p) => p.id !== id)
+          : lista.map((p) => (p.id === id ? { ...p, status } : p))
       );
     } catch (err) {
       if (err.status === 401) onSessaoExpirada();
@@ -253,10 +273,24 @@ export default function Pedidos({ token, onSessaoExpirada }) {
             </button>
           ))}
         </div>
-        <button type="button" className="adm-btn adm-btn--icone" onClick={carregar} aria-label="Atualizar agora">
-          <RefreshCw size={16} aria-hidden="true" />
-        </button>
+        <div className="adm-pedidos__botoes">
+          <button type="button" className="adm-btn adm-btn--rota" onClick={() => setLendoQr(true)}>
+            <QrCode size={16} aria-hidden="true" /> Ler QR Code
+          </button>
+          <button type="button" className="adm-btn adm-btn--icone" onClick={carregar} aria-label="Atualizar agora">
+            <RefreshCw size={16} aria-hidden="true" />
+          </button>
+        </div>
       </div>
+
+      {lendoQr && (
+        <LeitorQr
+          token={token}
+          onLido={carregar}
+          onFechar={() => setLendoQr(false)}
+          onSessaoExpirada={() => sairRef.current()}
+        />
+      )}
       <p className="adm-suave adm-explica">
         Atualiza sozinho a cada 30 segundos e apita quando chega pedido novo.
         {atualizadoEm && ` Última atualização: ${atualizadoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}

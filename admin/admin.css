@@ -660,3 +660,129 @@
 .adm-btn--rota:hover:not(:disabled) {
   background: #1d4ed8;
 }
+
+.adm-pedidos__barra {
+  flex-wrap: wrap;
+}
+
+.adm-pedidos__botoes {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.adm-pedido__acoes-secundarias {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.adm-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.adm-link--perigo {
+  color: var(--vermelho);
+}
+
+/* ---------- Leitor de QR Code ---------- */
+
+.adm-qr {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #111;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+
+.adm-qr__topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.adm-qr__camera {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+}
+
+.adm-qr__camera video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.adm-qr__mira {
+  position: absolute;
+  inset: 18%;
+  border: 3px solid var(--amarelo);
+  border-radius: 14px;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35);
+}
+
+.adm-qr__sem-camera {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  color: #d6d3d1;
+}
+
+.adm-qr__ajuda {
+  text-align: center;
+  color: #d6d3d1;
+  font-size: 0.85rem;
+}
+
+.adm-qr .adm-ok,
+.adm-qr .adm-erro {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  font-size: 0.95rem;
+}
+
+.adm-qr__manual {
+  display: flex;
+  gap: 8px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.adm-qr__manual input {
+  flex: 1;
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #44403c;
+  background: #1c1917;
+  color: #fff;
+}
