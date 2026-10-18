@@ -1,44 +1,58 @@
 import { useState } from 'react';
-import { Bike, ChevronDown, ChefHat, MessageCircle } from 'lucide-react';
+import { Ban, Bike, ChefHat, ChevronDown, MessageCircle, PartyPopper } from 'lucide-react';
 import { formatarMoeda, linkWhatsapp } from '../utils';
-
-const ETAPAS = [
-  { status: 'Em andamento', nome: 'Em preparo', Icone: ChefHat },
-  { status: 'Em rota de entrega', nome: 'Saiu para entrega', Icone: Bike },
-];
 
 const PASSOS = ['Recebido', 'Em preparo', 'Saiu para entrega', 'Entregue'];
 
-function Pedido({ pedido }) {
+// Como cada status aparece para o cliente
+function situacao(status) {
+  switch ((status || '').trim().toLowerCase()) {
+    case 'em rota de entrega':
+      return { titulo: 'Saiu para entrega', Icone: Bike, nivel: 2 };
+    case 'baixado':
+      return { titulo: 'Pedido entregue. Bom apetite!', Icone: PartyPopper, nivel: 3 };
+    case 'cancelado':
+      return { titulo: 'Pedido cancelado', Icone: Ban, nivel: -1 };
+    default:
+      return { titulo: 'Em preparo', Icone: ChefHat, nivel: 1 };
+  }
+}
+
+export const pedidoFinalizado = (p) => ['baixado', 'cancelado'].includes((p.status || '').trim().toLowerCase());
+
+export function CartaoAcompanhamento({ pedido, comContato = true }) {
   const [aberto, setAberto] = useState(false);
-  const emRota = pedido.status === 'Em rota de entrega';
-  const { Icone, nome } = ETAPAS[emRota ? 1 : 0];
-  const nivel = emRota ? 2 : 1; // posição atual em PASSOS
+  const { titulo, Icone, nivel } = situacao(pedido.status);
+  const cancelado = nivel < 0;
   const contato = pedido.whatsappLoja
     ? linkWhatsapp(pedido.whatsappLoja, `Olá! Gostaria de saber sobre o meu pedido nº ${pedido.id}.`)
     : null;
 
   return (
-    <li className="acomp">
+    <div className={`acomp ${cancelado ? 'acomp--cancelado' : ''}`}>
       <div className="acomp__topo">
         <span className="acomp__icone" aria-hidden="true">
           <Icone size={22} />
         </span>
-        <div className="acomp__titulo">
-          <strong>{nome}</strong>
+        <div className="acomp__titulo" aria-live="polite">
+          <strong>{titulo}</strong>
           <span>
             Pedido nº {pedido.id} · {pedido.hora} · {formatarMoeda(pedido.total)}
           </span>
         </div>
       </div>
 
-      <ol className="acomp__etapas" aria-label="Andamento do pedido">
-        {PASSOS.map((passo, i) => (
-          <li key={passo} className={i < nivel ? 'feita' : i === nivel ? 'feita atual' : ''}>
-            {passo}
-          </li>
-        ))}
-      </ol>
+      {cancelado ? (
+        <p className="acomp__aviso">A loja cancelou este pedido. Se tiver alguma dúvida, fale com a gente pelo WhatsApp.</p>
+      ) : (
+        <ol className="acomp__etapas" aria-label="Andamento do pedido">
+          {PASSOS.map((passo, i) => (
+            <li key={passo} className={i < nivel ? 'feita' : i === nivel ? 'feita atual' : ''}>
+              {passo}
+            </li>
+          ))}
+        </ol>
+      )}
 
       {aberto && (
         <div className="acomp__detalhe">
@@ -67,26 +81,30 @@ function Pedido({ pedido }) {
           {aberto ? 'Esconder pedido' : 'Ver pedido'}
           <ChevronDown size={16} aria-hidden="true" className={aberto ? 'gira' : ''} />
         </button>
-        {contato && (
+        {comContato && contato && (
           <a className="acomp__btn acomp__btn--wpp" href={contato} target="_blank" rel="noopener noreferrer">
             <MessageCircle size={16} aria-hidden="true" /> Falar com a loja
           </a>
         )}
       </div>
-    </li>
+    </div>
   );
 }
 
+// Lista no topo da identificação e do cardápio: só pedidos ainda em curso
 export default function PedidosEmCurso({ pedidos }) {
-  if (!pedidos?.length) return null;
+  const emCurso = (pedidos || []).filter((p) => !pedidoFinalizado(p));
+  if (!emCurso.length) return null;
   return (
     <section className="acomp-lista" aria-label="Seus pedidos em andamento">
       <h2 className="acomp-lista__titulo">
-        {pedidos.length === 1 ? 'Você tem um pedido em andamento' : `Você tem ${pedidos.length} pedidos em andamento`}
+        {emCurso.length === 1 ? 'Você tem um pedido em andamento' : `Você tem ${emCurso.length} pedidos em andamento`}
       </h2>
       <ul>
-        {pedidos.map((p) => (
-          <Pedido key={p.id} pedido={p} />
+        {emCurso.map((p) => (
+          <li key={p.id}>
+            <CartaoAcompanhamento pedido={p} />
+          </li>
         ))}
       </ul>
       <p className="acomp-lista__rodape">Pode fazer um novo pedido normalmente aqui embaixo.</p>
