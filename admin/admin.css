@@ -976,3 +976,44 @@
 .adm-integ__chave .adm-dica {
   margin-top: 6px;
 }
+
+/* Busca da aba Pedidos */
+.adm-busca--pedidos {
+  margin: 8px 0 6px;
+}
+
+.adm-busca--pedidos input {
+  padding-right: 40px;
+}
+
+.adm-busca__limpar {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  padding: 6px;
+  border: none;
+  border-radius: 50%;
+  background: var(--superficie);
+  color: var(--texto-suave);
+}
+
+/* o ícone do X não segue a posição da lupa */
+.adm-busca .adm-busca__limpar svg {
+  position: static;
+  transform: none;
+  color: inherit;
+}
+
+/* esconde o "x" nativo do navegador (já existe o botão de limpar) */
+.adm-busca--pedidos input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* esconde o "x" que o próprio navegador põe em campos de busca (já temos o nosso) */
+.adm-busca input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}

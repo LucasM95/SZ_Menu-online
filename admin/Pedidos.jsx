@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Ban, Bike, CheckCheck, ChevronDown, Clock, MessageCircle, Printer, QrCode, RefreshCw, Undo2 } from 'lucide-react';
+import { Ban, Bike, CheckCheck, ChevronDown, Clock, MessageCircle, Printer, QrCode, RefreshCw, Search, Undo2, X } from 'lucide-react';
 import { apenasDigitos, formatarMoeda, linkWhatsapp } from '../utils';
 import { listarPedidos, mudarStatusPedido } from './adminApi';
 import { imprimirComanda } from './comanda';
@@ -31,6 +31,21 @@ function bipe() {
   } catch {
     /* sem som disponível */
   }
+}
+
+// Sem acento e minúsculo: "João" e "JOAO" viram "joao"
+const normalizar = (t) =>
+  String(t ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+function combinaComBusca(pedido, termo) {
+  if (!termo) return true;
+  const digitos = termo.replace(/\D/g, '');
+  if (normalizar(pedido.cliente).includes(termo) || normalizar(pedido.endereco).includes(termo)) return true;
+  // número do pedido ou telefone (só dígitos, para "(62)9..." e "629..." funcionarem igual)
+  return digitos.length > 0 && (String(pedido.id).includes(digitos) || String(pedido.wpp || '').replace(/\D/g, '').includes(digitos));
 }
 
 function tempoDecorrido(minutos) {
@@ -195,6 +210,7 @@ export default function Pedidos({ token, onSessaoExpirada }) {
   sairRef.current = onSessaoExpirada;
   const [atualizadoEm, setAtualizadoEm] = useState(null);
   const [lendoQr, setLendoQr] = useState(false);
+  const [busca, setBusca] = useState('');
 
   const carregar = useCallback(async () => {
     try {
@@ -255,7 +271,9 @@ export default function Pedidos({ token, onSessaoExpirada }) {
     }
   };
 
-  const visiveis = pedidos.filter(FILTROS.find((f) => f.id === filtro).teste);
+  const termo = normalizar(busca.trim());
+  const buscados = pedidos.filter((p) => combinaComBusca(p, termo));
+  const visiveis = buscados.filter(FILTROS.find((f) => f.id === filtro).teste);
 
   return (
     <section>
@@ -269,7 +287,7 @@ export default function Pedidos({ token, onSessaoExpirada }) {
               aria-pressed={filtro === f.id}
               onClick={() => setFiltro(f.id)}
             >
-              {f.nome} <span>{pedidos.filter(f.teste).length}</span>
+              {f.nome} <span>{buscados.filter(f.teste).length}</span>
             </button>
           ))}
         </div>
@@ -291,6 +309,22 @@ export default function Pedidos({ token, onSessaoExpirada }) {
           onSessaoExpirada={() => sairRef.current()}
         />
       )}
+      <div className="adm-busca adm-busca--pedidos">
+        <Search size={18} aria-hidden="true" />
+        <input
+          type="search"
+          placeholder="Buscar por cliente, nº do pedido, telefone ou endereço"
+          aria-label="Buscar pedido"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+        {busca && (
+          <button type="button" className="adm-busca__limpar" onClick={() => setBusca('')} aria-label="Limpar busca">
+            <X size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
       <p className="adm-suave adm-explica">
         Atualiza sozinho a cada 30 segundos e apita quando chega pedido novo.
         {atualizadoEm && ` Última atualização: ${atualizadoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}
@@ -299,7 +333,9 @@ export default function Pedidos({ token, onSessaoExpirada }) {
       {carregando && <p className="adm-suave">Carregando pedidos…</p>}
       {erro && <p className="adm-erro">{erro}</p>}
       {!carregando && !erro && visiveis.length === 0 && (
-        <p className="adm-vazio">Nenhum pedido aberto por aqui. 🎉</p>
+        <p className="adm-vazio">
+          {termo ? `Nenhum pedido encontrado para "${busca.trim()}".` : 'Nenhum pedido aberto por aqui. 🎉'}
+        </p>
       )}
 
       <ul className="adm-pedidos">

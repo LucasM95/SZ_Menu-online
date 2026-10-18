@@ -114,6 +114,13 @@ export default function IntegracaoPdv({ token, onSessaoExpirada }) {
         <span className="adm-integ__bolinha" aria-hidden="true" /> {texto}
       </p>
       {info.chaveCriadaEm && <p className="adm-suave">Chave atual gerada em {info.chaveCriadaEm}.</p>}
+      {info.temChave && (
+        <p className="adm-suave">
+          {info.cardapioEnviadoEm
+            ? `Cardápio enviado pelo PDV em ${info.cardapioEnviadoEm}.`
+            : 'O PDV ainda não enviou o cardápio (menu de integrações › Cardápio Online: Enviar Cardápio).'}
+        </p>
+      )}
 
       {info.podeGerar && (info.podeConsultar || chave) && (
         <div className="adm-integ__chave">
