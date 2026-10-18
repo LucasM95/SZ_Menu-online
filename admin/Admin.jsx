@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ClipboardList, EyeOff, ImageOff, LogOut, Pencil, Search, Tag, Trash2, Upload, UtensilsCrossed, X } from 'lucide-react';
+import { Check, ClipboardList, EyeOff, Store, ImageOff, LogOut, Pencil, Search, Tag, Trash2, Upload, UtensilsCrossed, X } from 'lucide-react';
 import { carregarEmpresas } from '../api';
 import { formatarMoeda, fotoUrl } from '../utils';
 import {
@@ -17,6 +17,7 @@ import {
   salvarSessao,
 } from './adminApi';
 import Pedidos from './Pedidos';
+import Lojas from './Lojas';
 import './admin.css';
 
 // Nome do PDV em maiúsculas vira o texto sugerido: "X-TUDO" -> "X-tudo"
@@ -428,6 +429,7 @@ function Painel({ sessao, onSair }) {
             { id: 'pedidos', nome: 'Pedidos', Icone: ClipboardList, mostrar: true },
             { id: 'produtos', nome: 'Produtos', Icone: UtensilsCrossed, mostrar: podeCardapio },
             { id: 'promocoes', nome: 'Promoções', Icone: Tag, mostrar: podeCardapio },
+            { id: 'lojas', nome: 'Lojas', Icone: Store, mostrar: podeCardapio },
           ]
             .filter((a) => a.mostrar)
             .map(({ id, nome, Icone }) => (
@@ -445,6 +447,8 @@ function Painel({ sessao, onSair }) {
 
         {aba === 'pedidos' ? (
           <Pedidos token={sessao.token} onSessaoExpirada={sessaoExpirada} />
+        ) : aba === 'lojas' ? (
+          <Lojas token={sessao.token} filial={sessao.filial} onSessaoExpirada={sessaoExpirada} />
         ) : aba === 'promocoes' ? (
           <ListaPromocoes token={sessao.token} onSessaoExpirada={sessaoExpirada} />
         ) : (

@@ -786,3 +786,100 @@
   background: #1c1917;
   color: #fff;
 }
+
+/* ---------- Lojas ---------- */
+
+.adm-abas {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.adm-aba {
+  flex-shrink: 0;
+}
+
+.adm-foto--icone {
+  background: var(--amarelo-claro);
+  color: #78350f;
+}
+
+.adm-editor--loja {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adm-linha--loja {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .adm-linha--loja {
+    grid-template-columns: 1.4fr 1fr 0.8fr;
+  }
+}
+
+.adm-horario {
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--borda-forte);
+}
+
+.adm-horario__dias {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 8px;
+}
+
+.adm-horario__dias li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+}
+
+.adm .adm-horario__dia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.9rem;
+  width: 104px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.adm .adm-horario__dia input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--laranja);
+}
+
+.adm-horario__horas {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.adm .adm-horario__horas input {
+  flex: 1;
+  min-width: 0;
+  max-width: 90px;
+  padding: 7px 6px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-horario__fechado .adm-horario__dia {
+  color: var(--texto-suave);
+}
+
+.adm-adicionar {
+  margin-top: 12px;
+}

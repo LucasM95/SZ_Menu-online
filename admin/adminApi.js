@@ -74,3 +74,10 @@ export const mudarStatusPedido = (token, id, status) =>
 
 export const saidaPorQrCode = (token, codigo) =>
   request('/admin/pedidos/qrcode', { method: 'POST', body: { codigo }, token });
+
+export const listarLojas = (token) => request('/admin/empresas', { token });
+
+export const salvarLoja = (token, loja) =>
+  loja.idempresa
+    ? request(`/admin/empresas/${loja.idempresa}`, { method: 'PUT', body: loja, token })
+    : request('/admin/empresas', { method: 'POST', body: loja, token });
