@@ -32,6 +32,7 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
           ...c,
           nome: c.nome.trim() ? c.nome : achado.nome || '',
           ruaNumero: preencherEndereco ? achado.ruaNumero : c.ruaNumero,
+          referencia: preencherEndereco && !c.referencia.trim() ? achado.referencia || '' : c.referencia,
           cidade: preencherEndereco && cidadeValida ? achado.cidade : c.cidade,
         };
       });
