@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, KeyRound, MonitorSmartphone, RefreshCw } from 'lucide-react';
-import { gerarChaveIntegracao, situacaoIntegracao } from './adminApi';
+import { Check, Copy, Eye, EyeOff, KeyRound, MonitorSmartphone, RefreshCw } from 'lucide-react';
+import { consultarChaveIntegracao, gerarChaveIntegracao, situacaoIntegracao } from './adminApi';
 
 // Verde: conversou há pouco. O PDV chama a nuvem a cada ~15 s quando está ligado.
 function situacao(info) {
@@ -15,7 +15,8 @@ function situacao(info) {
 export default function IntegracaoPdv({ token, onSessaoExpirada }) {
   const [info, setInfo] = useState(null);
   const [erro, setErro] = useState('');
-  const [chaveNova, setChaveNova] = useState('');
+  const [chave, setChave] = useState(''); // só é buscada quando o usuário pede
+  const [mostrar, setMostrar] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [gerando, setGerando] = useState(false);
 
@@ -45,7 +46,8 @@ export default function IntegracaoPdv({ token, onSessaoExpirada }) {
     setCopiado(false);
     try {
       const r = await gerarChaveIntegracao(token);
-      setChaveNova(r.chave);
+      setChave(r.chave);
+      setMostrar(true);
       carregar();
     } catch (err) {
       if (err.status === 401) onSessaoExpirada();
@@ -55,15 +57,44 @@ export default function IntegracaoPdv({ token, onSessaoExpirada }) {
     }
   };
 
-  const copiar = async () => {
+  // Busca a chave guardada (criptografada) só quando o usuário pede para ver ou copiar
+  const obterChave = async () => {
+    if (chave) return chave;
     try {
-      await navigator.clipboard.writeText(chaveNova);
+      const r = await consultarChaveIntegracao(token);
+      setChave(r.chave);
+      return r.chave;
+    } catch (err) {
+      if (err.status === 401) onSessaoExpirada();
+      else setErro(err.message);
+      return '';
+    }
+  };
+
+  const alternarMostrar = async () => {
+    if (mostrar) {
+      setMostrar(false);
+      return;
+    }
+    if (await obterChave()) setMostrar(true);
+  };
+
+  const copiar = async () => {
+    const valor = await obterChave();
+    if (!valor) return;
+    try {
+      await navigator.clipboard.writeText(valor);
     } catch {
-      // navegador sem permissão: seleciona o texto para copiar com Ctrl+C
-      document.getElementById('chave-pdv')?.select();
-      document.execCommand('copy');
+      // navegador sem permissão: mostra e seleciona para copiar com Ctrl+C
+      setMostrar(true);
+      setTimeout(() => {
+        const campo = document.getElementById('chave-pdv');
+        campo?.select();
+        document.execCommand('copy');
+      }, 0);
     }
     setCopiado(true);
+    setTimeout(() => setCopiado(false), 2500);
   };
 
   if (!info) return erro ? <p className="adm-erro">{erro}</p> : null;
@@ -84,11 +115,26 @@ export default function IntegracaoPdv({ token, onSessaoExpirada }) {
       </p>
       {info.chaveCriadaEm && <p className="adm-suave">Chave atual gerada em {info.chaveCriadaEm}.</p>}
 
-      {chaveNova && (
+      {info.podeGerar && (info.podeConsultar || chave) && (
         <div className="adm-integ__chave">
-          <label htmlFor="chave-pdv">Chave da loja (copie agora: ela não será mostrada de novo)</label>
+          <label htmlFor="chave-pdv">Chave da loja</label>
           <div className="adm-integ__chave-linha">
-            <input id="chave-pdv" readOnly value={chaveNova} onFocus={(e) => e.target.select()} />
+            <input
+              id="chave-pdv"
+              readOnly
+              type={mostrar ? 'text' : 'password'}
+              value={mostrar ? chave : '●'.repeat(24)}
+              onFocus={(e) => mostrar && e.target.select()}
+            />
+            <button
+              type="button"
+              className="adm-btn"
+              onClick={alternarMostrar}
+              aria-label={mostrar ? 'Ocultar chave' : 'Mostrar chave'}
+            >
+              {mostrar ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
+              {mostrar ? 'Ocultar' : 'Mostrar'}
+            </button>
             <button type="button" className="adm-btn adm-btn--primario" onClick={copiar}>
               {copiado ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
               {copiado ? 'Copiada' : 'Copiar'}
@@ -99,6 +145,13 @@ export default function IntegracaoPdv({ token, onSessaoExpirada }) {
             Testar Conexão e depois em Salvar. Não envie a chave por WhatsApp ou e-mail.
           </p>
         </div>
+      )}
+
+      {info.podeGerar && info.temChave && !info.podeConsultar && !chave && (
+        <p className="adm-dica">
+          A chave atual foi gerada antes da consulta existir e não pode ser exibida. Gere uma nova para poder consultá-la
+          sempre (depois cole a nova no PDV).
+        </p>
       )}
 
       {erro && <p className="adm-erro">{erro}</p>}

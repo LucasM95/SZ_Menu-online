@@ -944,11 +944,30 @@
 
 .adm-integ__chave-linha {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
+/* Celular: chave numa linha inteira, botões embaixo. Computador: tudo na mesma linha. */
 .adm .adm-integ__chave-linha input {
-  flex: 1;
+  flex: 1 1 100%;
+}
+
+.adm-integ__chave-linha .adm-btn {
+  flex: 1 1 auto;
+}
+
+@media (min-width: 640px) {
+  .adm .adm-integ__chave-linha input {
+    flex: 1 1 auto;
+  }
+
+  .adm-integ__chave-linha .adm-btn {
+    flex: 0 0 auto;
+  }
+}
+
+.adm .adm-integ__chave-linha input {
   min-width: 0;
   font-family: ui-monospace, Consolas, monospace;
   font-size: 13px;

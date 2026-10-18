@@ -85,3 +85,5 @@ export const salvarLoja = (token, loja) =>
 export const situacaoIntegracao = (token) => request('/admin/integracao', { token });
 
 export const gerarChaveIntegracao = (token) => request('/admin/integracao/chave', { method: 'POST', token });
+
+export const consultarChaveIntegracao = (token) => request('/admin/integracao/chave', { token });
