@@ -72,10 +72,14 @@ export default function App() {
 
   const cidadeAtual = cidades.find((c) => c.nome === cliente.cidade);
   const filialAtual = cidadeAtual?.filial ?? null;
+  const lojaFechada = Boolean(cidadeAtual && !cidadeAtual.aberta);
+  const avisoFechado = lojaFechada
+    ? `Estamos fora do horário de atendimento em ${cidadeAtual.nome}. ${cidadeAtual.mensagem}`.trim()
+    : '';
 
   // ---------- Carga das cidades ----------
-  const carregarCidades = useCallback(async () => {
-    setStatusCidades('carregando');
+  const carregarCidades = useCallback(async ({ silencioso = false } = {}) => {
+    if (!silencioso) setStatusCidades('carregando');
     try {
       const lista = await carregarEmpresas();
       setCidades(lista);
@@ -83,13 +87,17 @@ export default function App() {
       setCliente((c) => (lista.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
       setStatusCidades('ok');
     } catch (err) {
+      if (silencioso) return; // falha na atualização automática: mantém o que já tinha
       setErroCidades(err.message);
       setStatusCidades('erro');
     }
   }, []);
 
+  // Recarrega a cada minuto: a loja pode abrir ou fechar com o site aberto
   useEffect(() => {
     carregarCidades();
+    const t = setInterval(() => carregarCidades({ silencioso: true }), 60000);
+    return () => clearInterval(t);
   }, [carregarCidades]);
 
   // ---------- Carga do cardápio da filial ----------
@@ -242,6 +250,10 @@ export default function App() {
   // ---------- Envio ----------
   const finalizarPedido = async () => {
     setErroEnvio('');
+    if (lojaFechada) {
+      setErroEnvio(avisoFechado);
+      return;
+    }
     const erro = validarPagamento(pagamento, dados.tiposPagamento, total);
     if (erro) {
       setErroEnvio(erro);
@@ -307,7 +319,7 @@ export default function App() {
 
   // ---------- Render ----------
   const cardapioPronto = cardapio.status === 'ok' && cardapio.filial === filialAtual;
-  const mostrarBarra = etapa === 'cardapio' && cardapioPronto && carrinho.length > 0;
+  const mostrarBarra = etapa === 'cardapio' && cardapioPronto && carrinho.length > 0 && !lojaFechada;
   // Na tela de sucesso já existe o botão grande do WhatsApp
   const mostrarWhatsapp = statusCidades === 'ok' && etapa !== 'sucesso' && Boolean(cidadeAtual?.whatsapp);
 
@@ -357,6 +369,7 @@ export default function App() {
         categorias={dados.categorias}
         produtos={dados.produtos}
         promocoes={dados.promocoes}
+        loja={cidadeAtual}
         onEscolher={escolherProduto}
         onEscolherPromocao={adicionarPromocao}
         onAlterarDados={() => setEtapa('identificacao')}
@@ -376,7 +389,8 @@ export default function App() {
         tiposPagamento={dados.tiposPagamento}
         pagamento={pagamento}
         setPagamento={setPagamento}
-        avisoExterno={erroEnvio}
+        avisoExterno={erroEnvio || avisoFechado}
+        lojaFechada={lojaFechada}
         onVoltar={() => {
           setErroEnvio('');
           setEtapa('cardapio');

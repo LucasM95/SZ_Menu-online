@@ -59,6 +59,9 @@ export async function carregarEmpresas() {
     taxa: e.taxa,
     filial: e.filial,
     whatsapp: e.whatsapp,
+    aberta: e.aberta !== false,
+    mensagem: e.mensagem || '',
+    horarios: e.horarios || [],
   }));
 }
 

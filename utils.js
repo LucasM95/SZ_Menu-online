@@ -43,6 +43,12 @@ export function mascaraMoeda(valor) {
   return (Number(digitos) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Hora no formato 24h: "18" -> "18", "1800" -> "18:00"
+export function mascaraHora(valor) {
+  const d = apenasDigitos(valor).slice(0, 4);
+  return d.length <= 2 ? d : `${d.slice(0, 2)}:${d.slice(2)}`;
+}
+
 // ---------- Telefone ----------
 
 export const apenasDigitos = (texto) => String(texto ?? '').replace(/\D/g, '');

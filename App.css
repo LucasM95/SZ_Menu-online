@@ -1671,3 +1671,55 @@ body {
   font-size: 0.85rem;
   color: #f5d9b8;
 }
+
+/* ---------- Loja fora do horário ---------- */
+
+.aviso-fechado {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #2a0a06;
+  color: #fff7ed;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.aviso-fechado svg {
+  flex-shrink: 0;
+  color: var(--amarelo);
+  margin-top: 2px;
+}
+
+.aviso-fechado strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.aviso-fechado p {
+  font-size: 0.88rem;
+  color: #f5d9b8;
+}
+
+.aviso-fechado ul {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: #fff7ed;
+}
+
+.btn-adicionar:disabled,
+.btn-mais:disabled,
+.promo__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cidade-btn__fechado {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--vermelho);
+}
