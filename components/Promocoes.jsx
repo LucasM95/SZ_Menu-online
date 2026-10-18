@@ -5,7 +5,7 @@ function resumoItens(itens) {
   return itens.map((i) => `${i.qtde}x ${i.nome}`).join(' + ');
 }
 
-export default function Promocoes({ promocoes, onEscolher }) {
+export default function Promocoes({ promocoes, onEscolher, fechado = false }) {
   if (!promocoes?.length) return null;
 
   return (
@@ -51,9 +51,10 @@ export default function Promocoes({ promocoes, onEscolher }) {
                   type="button"
                   className="promo__btn"
                   onClick={() => onEscolher(promo)}
+                  disabled={fechado}
                   aria-label={`Adicionar promoção ${promo.nome}`}
                 >
-                  <Plus size={18} aria-hidden="true" /> Quero essa
+                  <Plus size={18} aria-hidden="true" /> {fechado ? 'Loja fechada' : 'Quero essa'}
                 </button>
               </div>
             </article>

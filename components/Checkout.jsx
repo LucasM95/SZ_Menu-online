@@ -15,6 +15,7 @@ export default function Checkout({
   pagamento,
   setPagamento,
   avisoExterno,
+  lojaFechada = false,
   onVoltar,
   onRevisar,
 }) {
@@ -24,6 +25,7 @@ export default function Checkout({
   const diferenca = Math.round((total - somaMultiplos) * 100) / 100;
 
   const revisar = () => {
+    if (lojaFechada) return;
     if (carrinho.length === 0) {
       setErro('Seu carrinho está vazio.');
       return;
@@ -227,8 +229,8 @@ export default function Checkout({
 
           {mensagem && <p className="erro-inline" role="alert">{mensagem}</p>}
 
-          <button type="button" className="btn-primario" onClick={revisar}>
-            Revisar pedido
+          <button type="button" className="btn-primario" onClick={revisar} disabled={lojaFechada}>
+            {lojaFechada ? 'Loja fechada no momento' : 'Revisar pedido'}
           </button>
         </div>
       )}

@@ -76,7 +76,7 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
           }}
         />
         <h2 className="titulo-secao">Onde vamos entregar?</h2>
-        <p className="texto-suave">Seus dados ficam salvos neste aparelho para o próximo pedido.</p>
+        <p className="texto-suave">Seus dados ficam salvos no seu aparelho para o próximo pedido.</p>
       </div>
 
       <form onSubmit={avancar} className="formulario" noValidate>
@@ -91,7 +91,8 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
                 aria-pressed={cliente.cidade === c.nome}
                 onClick={() => onEscolherCidade(c.nome)}
               >
-                {c.nome}
+                <span>{c.nome}</span>
+                {!c.aberta && <small className="cidade-btn__fechado">Fechado agora</small>}
               </button>
             ))}
           </div>
