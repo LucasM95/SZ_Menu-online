@@ -883,3 +883,77 @@
 .adm-adicionar {
   margin-top: 12px;
 }
+
+/* ---------- Integração com o PDV ---------- */
+
+.adm-integ {
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.adm-integ__topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.adm-integ__topo .adm-btn {
+  margin-left: auto;
+}
+
+.adm-integ__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.adm-integ__bolinha {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.adm-integ__status--verde { color: var(--verde); }
+.adm-integ__status--amarelo { color: #a16207; }
+.adm-integ__status--vermelho { color: var(--vermelho); }
+.adm-integ__status--cinza { color: var(--texto-suave); }
+
+.adm-integ__chave {
+  width: 100%;
+  background: var(--amarelo-claro);
+  border: 1px solid var(--amarelo-borda);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.adm .adm-integ__chave label {
+  margin-top: 0;
+}
+
+.adm-integ__chave-linha {
+  display: flex;
+  gap: 8px;
+}
+
+.adm .adm-integ__chave-linha input {
+  flex: 1;
+  min-width: 0;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+}
+
+.adm-integ__chave .adm-dica {
+  margin-top: 6px;
+}

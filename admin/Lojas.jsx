@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Copy, MapPin, Plus, X } from 'lucide-react';
 import { formatarMoeda, mascaraHora, mascaraMoeda, mascaraTelefone, parseMoeda } from '../utils';
 import { listarLojas, salvarLoja } from './adminApi';
+import IntegracaoPdv from './IntegracaoPdv';
 
 const DIAS = [
   ['seg', 'Segunda'],
@@ -226,6 +227,8 @@ export default function Lojas({ token, filial, onSessaoExpirada }) {
   if (erro) return <p className="adm-erro">{erro}</p>;
 
   return (
+    <>
+    <IntegracaoPdv token={token} onSessaoExpirada={onSessaoExpirada} />
     <section className="adm-grupo">
       <p className="adm-suave adm-explica">
         Cidades atendidas pela filial {filial}: WhatsApp, taxa de entrega e horário de atendimento. Fora do horário, o
@@ -283,5 +286,6 @@ export default function Lojas({ token, filial, onSessaoExpirada }) {
         </button>
       )}
     </section>
+    </>
   );
 }

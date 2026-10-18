@@ -81,3 +81,7 @@ export const salvarLoja = (token, loja) =>
   loja.idempresa
     ? request(`/admin/empresas/${loja.idempresa}`, { method: 'PUT', body: loja, token })
     : request('/admin/empresas', { method: 'POST', body: loja, token });
+
+export const situacaoIntegracao = (token) => request('/admin/integracao', { token });
+
+export const gerarChaveIntegracao = (token) => request('/admin/integracao/chave', { method: 'POST', token });
