@@ -81,9 +81,10 @@ export function enviarPedido(payload) {
 }
 
 // Pedidos em curso de um WhatsApp (status, itens e total; sem dados pessoais)
-export async function acompanharPedidos(digitos) {
+// incluir: id de um pedido para trazer mesmo depois de entregue ou cancelado
+export async function acompanharPedidos(digitos, incluir) {
   try {
-    return await request(`/pedidos/acompanhar/${digitos}`);
+    return await request(`/pedidos/acompanhar/${digitos}${incluir ? `?pedido=${incluir}` : ''}`);
   } catch {
     return []; // a consulta é um extra: se falhar, o site segue normal
   }

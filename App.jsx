@@ -133,8 +133,10 @@ export default function App() {
     setCliente((c) => ({ ...c, cidade: nome }));
   };
 
-  // ---------- Acompanhamento de pedidos (a cada 60 s enquanto o site está aberto) ----------
+  // ---------- Acompanhamento de pedidos ----------
+  // A cada 60 s no site; a cada 20 s na tela de sucesso, onde o cliente está de olho no pedido
   const digitosTelefone = cliente.telefone.replace(/\D/g, '');
+  const idAcompanhado = etapa === 'sucesso' ? pedidoFinalizado?.id : null;
   useEffect(() => {
     if (digitosTelefone.length !== 11) {
       setPedidosEmCurso([]);
@@ -142,16 +144,16 @@ export default function App() {
     }
     let ativo = true;
     const buscar = () =>
-      acompanharPedidos(digitosTelefone).then((lista) => {
+      acompanharPedidos(digitosTelefone, idAcompanhado).then((lista) => {
         if (ativo) setPedidosEmCurso(lista);
       });
     buscar();
-    const t = setInterval(buscar, 60000);
+    const t = setInterval(buscar, idAcompanhado ? 20000 : 60000);
     return () => {
       ativo = false;
       clearInterval(t);
     };
-  }, [digitosTelefone, versaoAcompanhamento]);
+  }, [digitosTelefone, versaoAcompanhamento, idAcompanhado]);
 
   // ---------- Persistência local ----------
   useEffect(() => salvarStorage('sdz-cliente', cliente), [cliente]);
@@ -408,6 +410,7 @@ export default function App() {
       <Sucesso
         pedidoId={pedidoFinalizado?.id}
         linkWhatsapp={pedidoFinalizado?.whatsapp}
+        acompanhamento={pedidosEmCurso.find((p) => p.id === pedidoFinalizado?.id)}
         onNovoPedido={() => {
           setPedidoFinalizado(null);
           setEtapa('cardapio');

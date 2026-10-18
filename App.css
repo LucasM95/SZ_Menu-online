@@ -1641,3 +1641,33 @@ body {
   background: #128c7e;
   border-color: #128c7e;
 }
+
+/* Acompanhamento dentro da tela de sucesso */
+.sucesso__acomp {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+
+.sucesso__dica {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--texto-suave);
+}
+
+.acomp-lista > ul > li {
+  list-style: none;
+}
+
+.acomp--cancelado .acomp__icone {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.acomp__aviso {
+  font-size: 0.85rem;
+  color: #f5d9b8;
+}
