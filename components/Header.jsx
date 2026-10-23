@@ -1,8 +1,10 @@
 import { MapPin } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
-export default function Header({ cliente, mostrarCliente }) {
+export default function Header({ cliente, recebimento, mostrarCliente }) {
   const primeiroNome = cliente.nome.trim().split(' ')[0];
+  const naMesa = recebimento?.modo === 'mesa';
+  const quem = naMesa ? `Mesa ${recebimento.mesa}` : primeiroNome;
 
   return (
     <header className="header">
@@ -22,11 +24,11 @@ export default function Header({ cliente, mostrarCliente }) {
           </div>
         </div>
 
-        {mostrarCliente && primeiroNome && (
+        {mostrarCliente && quem && (
           <div className="header__cliente">
             <MapPin size={14} aria-hidden="true" />
             <span>
-              {primeiroNome}, {cliente.cidade}
+              {quem}, {cliente.cidade}
             </span>
           </div>
         )}

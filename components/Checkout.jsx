@@ -8,6 +8,8 @@ export default function Checkout({
   onRemover,
   onObservacao,
   cidade,
+  rotuloTaxa,
+  semTaxa = false,
   subtotal,
   taxaEntrega,
   total,
@@ -124,8 +126,8 @@ export default function Checkout({
               <span>{formatarMoeda(subtotal)}</span>
             </div>
             <div className="totais__linha">
-              <span>Entrega ({cidade})</span>
-              <span>{formatarMoeda(taxaEntrega)}</span>
+              <span>{rotuloTaxa || `Entrega (${cidade})`}</span>
+              <span>{semTaxa ? 'Sem taxa' : formatarMoeda(taxaEntrega)}</span>
             </div>
             <div className="totais__linha totais__linha--geral">
               <span>Total</span>

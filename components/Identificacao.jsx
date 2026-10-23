@@ -1,11 +1,39 @@
 import { useRef, useState } from 'react';
-import { ArrowRight, MapPin, Phone, Navigation, User } from 'lucide-react';
+import { ArrowRight, Bike, MapPin, Navigation, Phone, Store, User, UtensilsCrossed } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 import { buscarCliente } from '../api';
 import { apenasDigitos, mascaraTelefone } from '../utils';
 
-export default function Identificacao({ cliente, setCliente, cidades, onEscolherCidade, onAvancar }) {
+const MODOS = {
+  entrega: { nome: 'Entrega', Icone: Bike },
+  retirada: { nome: 'Retirada', Icone: Store },
+  mesa: { nome: 'Na mesa', Icone: UtensilsCrossed },
+};
+
+const TITULOS = {
+  entrega: 'Onde vamos entregar?',
+  retirada: 'Retirada no balcão',
+  mesa: 'Pedido na mesa',
+};
+
+export default function Identificacao({
+  cliente,
+  setCliente,
+  cidades,
+  onEscolherCidade,
+  recebimento,
+  setRecebimento,
+  modosDisponiveis = ['entrega'],
+  onAvancar,
+}) {
   const [buscando, setBuscando] = useState(false);
+  const loja = cidades.find((c) => c.nome === cliente.cidade);
+  const modo = recebimento.modo;
+  const naMesa = modo === 'mesa';
+  const escolherModo = (novo) => {
+    setErro('');
+    setRecebimento((r) => ({ ...r, modo: novo, mesa: novo === 'mesa' ? r.mesa : null, mesaFixa: false }));
+  };
   const [erro, setErro] = useState('');
   const ultimaBusca = useRef('');
 
@@ -45,20 +73,26 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
 
   const avancar = (e) => {
     e.preventDefault();
-    if (apenasDigitos(cliente.telefone).length !== 11) {
+    const digitos = apenasDigitos(cliente.telefone);
+    if (!cliente.cidade) {
+      setErro('Escolha sua cidade.');
+      return;
+    }
+    if (naMesa && !(recebimento.mesa >= 1 && recebimento.mesa <= (loja?.mesas || 0))) {
+      setErro('Escolha o número da sua mesa.');
+      return;
+    }
+    // Na mesa o WhatsApp é opcional (só para acompanhar); se digitar, tem que estar completo
+    if ((!naMesa || digitos.length > 0) && digitos.length !== 11) {
       setErro('Digite o WhatsApp completo com DDD, por exemplo (62) 99999-9999.');
       return;
     }
-    if (cliente.nome.trim().length < 2) {
+    if (!naMesa && cliente.nome.trim().length < 2) {
       setErro('Digite seu nome.');
       return;
     }
-    if (cliente.ruaNumero.trim().length < 3) {
+    if (modo === 'entrega' && cliente.ruaNumero.trim().length < 3) {
       setErro('Digite a rua e o número para a entrega.');
-      return;
-    }
-    if (!cliente.cidade) {
-      setErro('Escolha sua cidade.');
       return;
     }
     setErro('');
@@ -76,11 +110,29 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
             e.currentTarget.style.display = 'none';
           }}
         />
-        <h2 className="titulo-secao">Onde vamos entregar?</h2>
-        <p className="texto-suave">Seus dados ficam salvos no seu aparelho para o próximo pedido.</p>
+        <h2 className="titulo-secao">{loja ? TITULOS[modo] : 'Como você quer seu pedido?'}</h2>
+        <p className="texto-suave">
+          {naMesa && loja
+            ? 'Peça daqui mesmo: o pedido vai direto para o caixa da loja.'
+            : 'Seus dados ficam salvos no seu aparelho para o próximo pedido.'}
+        </p>
       </div>
 
       <form onSubmit={avancar} className="formulario" noValidate>
+        {recebimento.mesaFixa && loja && (
+          <div className="mesa-fixa" role="status">
+            <UtensilsCrossed size={22} aria-hidden="true" />
+            <div>
+              <strong>Mesa {recebimento.mesa}</strong>
+              <span>Sanduba do Zé · {loja.nome}</span>
+            </div>
+            <button type="button" className="mesa-fixa__sair" onClick={() => escolherModo('entrega')}>
+              Não estou na loja
+            </button>
+          </div>
+        )}
+
+        {!recebimento.mesaFixa && (
         <fieldset className="campo">
           <legend className="campo__rotulo">Cidade</legend>
           <div className="cidades">
@@ -98,10 +150,58 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
             ))}
           </div>
         </fieldset>
+        )}
+
+        {loja && !recebimento.mesaFixa && modosDisponiveis.length > 1 && (
+          <fieldset className="campo">
+            <legend className="campo__rotulo">Como você quer receber?</legend>
+            <div className="modos" role="radiogroup">
+              {modosDisponiveis.map((id) => {
+                const { nome, Icone } = MODOS[id];
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={modo === id}
+                    className={`modo-btn ${modo === id ? 'modo-btn--ativo' : ''}`}
+                    onClick={() => escolherModo(id)}
+                  >
+                    <Icone size={20} aria-hidden="true" />
+                    <span>{nome}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {modo === 'retirada' && (
+              <p className="modo-info">Retire no balcão da loja de {loja.nome}. Sem taxa de entrega.</p>
+            )}
+          </fieldset>
+        )}
+
+        {naMesa && !recebimento.mesaFixa && loja && (
+          <div className="campo">
+            <label className="campo__rotulo" htmlFor="mesa">Número da mesa</label>
+            <select
+              id="mesa"
+              className="input"
+              value={recebimento.mesa || ''}
+              onChange={(e) => setRecebimento((r) => ({ ...r, mesa: parseInt(e.target.value, 10) || null }))}
+            >
+              <option value="">Escolha a mesa</option>
+              {Array.from({ length: loja.mesas || 0 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  Mesa {n}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="campo">
           <label className="campo__rotulo" htmlFor="telefone">
-            WhatsApp {buscando && <span className="campo__status">buscando seu cadastro…</span>}
+            WhatsApp {naMesa && <span className="campo__opcional">(opcional, para acompanhar o pedido)</span>}
+            {buscando && <span className="campo__status">buscando seu cadastro…</span>}
           </label>
           <div className="campo__input-wrap">
             <Phone size={18} className="campo__icone" aria-hidden="true" />
@@ -119,7 +219,9 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
         </div>
 
         <div className="campo">
-          <label className="campo__rotulo" htmlFor="nome">Seu nome</label>
+          <label className="campo__rotulo" htmlFor="nome">
+            Seu nome {naMesa && <span className="campo__opcional">(opcional)</span>}
+          </label>
           <div className="campo__input-wrap">
             <User size={18} className="campo__icone" aria-hidden="true" />
             <input
@@ -135,6 +237,8 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
           </div>
         </div>
 
+        {modo === 'entrega' && (
+        <>
         <div className="campo">
           <label className="campo__rotulo" htmlFor="rua">Rua e número</label>
           <div className="campo__input-wrap">
@@ -169,6 +273,8 @@ export default function Identificacao({ cliente, setCliente, cidades, onEscolher
             />
           </div>
         </div>
+        </>
+        )}
 
         {erro && <p className="erro-inline" role="alert">{erro}</p>}
 

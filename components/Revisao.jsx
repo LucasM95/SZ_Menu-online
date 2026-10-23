@@ -1,8 +1,9 @@
 import { ArrowLeft } from 'lucide-react';
-import { formatarMoeda, totalItem } from '../utils';
+import { RECEBIMENTO_INICIAL, descreverRecebimento, formatarMoeda, totalItem } from '../utils';
 
 export default function Revisao({
   cliente,
+  recebimento = RECEBIMENTO_INICIAL,
   carrinho,
   subtotal,
   taxaEntrega,
@@ -24,13 +25,13 @@ export default function Revisao({
 
       <div className="pilha">
         <div className="resumo-bloco">
-          <h3 className="subtitulo">Entrega</h3>
-          <p className="resumo-bloco__forte">{cliente.nome}</p>
-          <p>{cliente.telefone}</p>
-          <p>
-            {cliente.ruaNumero}, {cliente.cidade}
-          </p>
-          {cliente.referencia && <p className="texto-suave">Referência: {cliente.referencia}</p>}
+          <h3 className="subtitulo">{descreverRecebimento(recebimento, cliente).titulo}</h3>
+          {cliente.nome.trim() && <p className="resumo-bloco__forte">{cliente.nome}</p>}
+          {cliente.telefone && <p>{cliente.telefone}</p>}
+          <p>{descreverRecebimento(recebimento, cliente).detalhe}</p>
+          {recebimento.modo === 'entrega' && cliente.referencia && (
+            <p className="texto-suave">Referência: {cliente.referencia}</p>
+          )}
         </div>
 
         <div className="resumo-bloco">
@@ -63,10 +64,12 @@ export default function Revisao({
               <span>Subtotal</span>
               <span>{formatarMoeda(subtotal)}</span>
             </div>
-            <div className="totais__linha">
-              <span>Entrega</span>
-              <span>{formatarMoeda(taxaEntrega)}</span>
-            </div>
+            {recebimento.modo === 'entrega' && (
+              <div className="totais__linha">
+                <span>Entrega</span>
+                <span>{formatarMoeda(taxaEntrega)}</span>
+              </div>
+            )}
           </div>
         </div>
 
