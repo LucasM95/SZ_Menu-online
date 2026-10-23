@@ -172,7 +172,8 @@ export function descreverPagamento(pagamento, tipos, total) {
 // Texto do pedido para mandar à filial. *texto* fica em negrito no WhatsApp.
 // ---------- Forma de receber: entrega, retirada no balcão ou pedido na mesa ----------
 
-export const RECEBIMENTO_INICIAL = { modo: 'entrega', mesa: null, mesaFixa: false };
+// mesaToken: código do QR da mesa (só pede na mesa quem leu o QR Code que está nela)
+export const RECEBIMENTO_INICIAL = { modo: 'entrega', mesa: null, mesaFixa: false, mesaToken: '' };
 
 /** Textos da forma de receber, para o carrinho, a revisão e a mensagem do WhatsApp. */
 export function descreverRecebimento(recebimento, cliente) {
@@ -197,11 +198,13 @@ export function descreverRecebimento(recebimento, cliente) {
   };
 }
 
-/** Opções que a loja da cidade aceita (o painel liga e desliga). */
+/**
+ * Opções que o cliente pode escolher na loja da cidade (o painel liga e desliga).
+ * A mesa não aparece aqui: só entra pelo QR Code que está na mesa.
+ */
 export function modosDaLoja(loja) {
   const modos = ['entrega'];
   if (loja?.permiteRetirada) modos.push('retirada');
-  if ((loja?.mesas || 0) > 0) modos.push('mesa');
   return modos;
 }
 

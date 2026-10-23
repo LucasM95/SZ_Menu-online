@@ -51,13 +51,14 @@ function lerRecebimentoSalvo() {
   return { ...RECEBIMENTO_INICIAL, modo: modo === 'retirada' ? 'retirada' : 'entrega' };
 }
 
-// QR Code da mesa: https://sandubadoze.com.br/?cidade=Guap%C3%B3&mesa=5
+// QR Code da mesa: https://sandubadoze.com.br/?cidade=Guap%C3%B3&mesa=5&t=<código da mesa>
 function lerMesaDoLink() {
   try {
     const p = new URLSearchParams(window.location.search);
     const mesa = parseInt(p.get('mesa'), 10);
     const cidade = (p.get('cidade') || '').trim();
-    return cidade && mesa > 0 ? { cidade, mesa } : null;
+    const token = (p.get('t') || '').trim();
+    return cidade && mesa > 0 && token ? { cidade, mesa, token } : null;
   } catch {
     return null;
   }
@@ -112,7 +113,7 @@ export default function App() {
       const lojaDoLink = link && lista.find((cid) => cid.nome === link.cidade);
       if (lojaDoLink && link.mesa <= (lojaDoLink.mesas || 0)) {
         setCliente((c) => ({ ...c, cidade: lojaDoLink.nome }));
-        setRecebimento({ modo: 'mesa', mesa: link.mesa, mesaFixa: true });
+        setRecebimento({ modo: 'mesa', mesa: link.mesa, mesaFixa: true, mesaToken: link.token });
       } else {
         // O cliente escolhe a cidade (ela define a filial e a taxa); só mantém a salva se ainda existir
         setCliente((c) => (lista.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
@@ -200,8 +201,10 @@ export default function App() {
   useEffect(() => {
     if (!cidadeAtual) return;
     const modos = modosDaLoja(cidadeAtual);
-    const mesaInvalida = recebimento.modo === 'mesa' && recebimento.mesa > (cidadeAtual.mesas || 0);
-    if (!modos.includes(recebimento.modo) || mesaInvalida) setRecebimento(RECEBIMENTO_INICIAL);
+    // Mesa só vale se veio pelo QR Code e a loja ainda tem essa mesa
+    const mesaValida =
+      recebimento.modo === 'mesa' && recebimento.mesaFixa && recebimento.mesa <= (cidadeAtual.mesas || 0);
+    if (!modos.includes(recebimento.modo) && !mesaValida) setRecebimento(RECEBIMENTO_INICIAL);
   }, [cidadeAtual, recebimento.modo, recebimento.mesa]);
 
   // ---------- Persistência local ----------
@@ -309,6 +312,7 @@ export default function App() {
       telefone: cliente.telefone,
       modo: recebimento.modo,
       mesa: recebimento.modo === 'mesa' ? recebimento.mesa : null,
+      mesaToken: recebimento.modo === 'mesa' ? recebimento.mesaToken : '',
       cliente: {
         nome: cliente.nome.trim(),
         cidade: cliente.cidade,
