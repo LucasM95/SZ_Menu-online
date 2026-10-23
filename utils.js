@@ -170,13 +170,66 @@ export function descreverPagamento(pagamento, tipos, total) {
 // ---------- WhatsApp ----------
 
 // Texto do pedido para mandar à filial. *texto* fica em negrito no WhatsApp.
-export function montarMensagemWhatsapp({ pedidoId, cliente, carrinho, subtotal, taxaEntrega, total, descricaoPagamento }) {
+// ---------- Forma de receber: entrega, retirada no balcão ou pedido na mesa ----------
+
+export const RECEBIMENTO_INICIAL = { modo: 'entrega', mesa: null, mesaFixa: false };
+
+/** Textos da forma de receber, para o carrinho, a revisão e a mensagem do WhatsApp. */
+export function descreverRecebimento(recebimento, cliente) {
+  if (recebimento.modo === 'mesa') {
+    return {
+      titulo: `Mesa ${recebimento.mesa}`,
+      detalhe: `Pedido feito na loja de ${cliente.cidade}`,
+      rotuloTaxa: `Pedido na mesa ${recebimento.mesa}`,
+    };
+  }
+  if (recebimento.modo === 'retirada') {
+    return {
+      titulo: 'Retirada no balcão',
+      detalhe: `Retire na loja de ${cliente.cidade}`,
+      rotuloTaxa: 'Retirada no balcão',
+    };
+  }
+  return {
+    titulo: 'Entrega',
+    detalhe: `${cliente.ruaNumero}, ${cliente.cidade}`,
+    rotuloTaxa: `Entrega (${cliente.cidade})`,
+  };
+}
+
+/** Opções que a loja da cidade aceita (o painel liga e desliga). */
+export function modosDaLoja(loja) {
+  const modos = ['entrega'];
+  if (loja?.permiteRetirada) modos.push('retirada');
+  if ((loja?.mesas || 0) > 0) modos.push('mesa');
+  return modos;
+}
+
+export function montarMensagemWhatsapp({
+  pedidoId,
+  cliente,
+  recebimento = RECEBIMENTO_INICIAL,
+  carrinho,
+  subtotal,
+  taxaEntrega,
+  total,
+  descricaoPagamento,
+}) {
   const linhas = [`*Pedido nº ${pedidoId} - Sanduba do Zé*`, ''];
 
-  linhas.push(`*Cliente:* ${cliente.nome}`);
-  linhas.push(`*WhatsApp:* ${cliente.telefone}`);
-  linhas.push(`*Endereço:* ${cliente.ruaNumero}, ${cliente.cidade}`);
-  if (cliente.referencia) linhas.push(`*Referência:* ${cliente.referencia}`);
+  if (recebimento.modo === 'mesa') {
+    linhas.push(`*MESA ${recebimento.mesa}* (${cliente.cidade})`);
+    if (cliente.nome.trim()) linhas.push(`*Cliente:* ${cliente.nome}`);
+  } else {
+    linhas.push(`*Cliente:* ${cliente.nome}`);
+    linhas.push(`*WhatsApp:* ${cliente.telefone}`);
+    if (recebimento.modo === 'retirada') {
+      linhas.push(`*RETIRADA NO BALCÃO* (${cliente.cidade})`);
+    } else {
+      linhas.push(`*Endereço:* ${cliente.ruaNumero}, ${cliente.cidade}`);
+      if (cliente.referencia) linhas.push(`*Referência:* ${cliente.referencia}`);
+    }
+  }
 
   linhas.push('', '*Itens:*');
   carrinho.forEach((item) => {
@@ -187,7 +240,7 @@ export function montarMensagemWhatsapp({ pedidoId, cliente, carrinho, subtotal, 
   });
 
   linhas.push('', `Subtotal: ${formatarMoeda(subtotal)}`);
-  linhas.push(`Entrega: ${formatarMoeda(taxaEntrega)}`);
+  if (recebimento.modo === 'entrega') linhas.push(`Entrega: ${formatarMoeda(taxaEntrega)}`);
   linhas.push(`*Total: ${formatarMoeda(total)}*`);
   linhas.push('', '*Pagamento:*', descricaoPagamento);
 

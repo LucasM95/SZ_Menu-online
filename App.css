@@ -1723,3 +1723,77 @@ body {
   font-weight: 700;
   color: var(--vermelho);
 }
+
+/* ---------- Entrega / Retirada / Na mesa ---------- */
+.modos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.modo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 2px solid var(--borda);
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.modo-btn--ativo {
+  border-color: var(--amarelo);
+  background: var(--amarelo-claro);
+}
+
+.modo-btn:focus-visible {
+  outline: 3px solid var(--amarelo);
+  outline-offset: 2px;
+}
+
+.modo-info {
+  margin-top: 8px;
+  font-size: 0.88rem;
+  color: var(--texto-suave);
+}
+
+.mesa-fixa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--amarelo-claro);
+  border: 2px solid var(--amarelo);
+}
+
+.mesa-fixa div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.mesa-fixa strong {
+  font-size: 1.15rem;
+}
+
+.mesa-fixa span {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+.mesa-fixa__sair {
+  border: none;
+  background: none;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+}

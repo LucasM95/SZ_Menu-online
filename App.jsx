@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { acompanharPedidos, carregarCardapio, carregarEmpresas, enviarPedido } from './api';
 import {
   PAGAMENTO_INICIAL,
+  RECEBIMENTO_INICIAL,
   arredondar,
   contarItens,
   descreverPagamento,
+  descreverRecebimento,
   lerStorage,
   linkWhatsapp,
+  modosDaLoja,
   montarMensagemWhatsapp,
   montarFormasPagamento,
   salvarStorage,
@@ -42,6 +45,24 @@ function lerCarrinhoSalvo() {
 
 const CARDAPIO_VAZIO = { status: 'vazio', filial: null, dados: null, erro: '' };
 
+// Entrega ou retirada ficam salvas para a próxima visita; a mesa nunca (vale só enquanto está na loja)
+function lerRecebimentoSalvo() {
+  const modo = lerStorage('sdz-modo', 'entrega');
+  return { ...RECEBIMENTO_INICIAL, modo: modo === 'retirada' ? 'retirada' : 'entrega' };
+}
+
+// QR Code da mesa: https://sandubadoze.com.br/?cidade=Guap%C3%B3&mesa=5
+function lerMesaDoLink() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const mesa = parseInt(p.get('mesa'), 10);
+    const cidade = (p.get('cidade') || '').trim();
+    return cidade && mesa > 0 ? { cidade, mesa } : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function App() {
   // Cidades atendidas (carregadas ao abrir o site)
   const [cidades, setCidades] = useState([]);
@@ -54,6 +75,8 @@ export default function App() {
 
   const [etapa, setEtapa] = useState('identificacao');
   const [cliente, setCliente] = useState(lerClienteSalvo);
+  const [recebimento, setRecebimento] = useState(lerRecebimentoSalvo);
+  const mesaDoLink = useRef(lerMesaDoLink());
   const [carrinho, setCarrinho] = useState(lerCarrinhoSalvo);
   const [pagamento, setPagamento] = useState(PAGAMENTO_INICIAL);
 
@@ -83,8 +106,17 @@ export default function App() {
     try {
       const lista = await carregarEmpresas();
       setCidades(lista);
-      // O cliente escolhe a cidade (ela define a filial e a taxa); só mantém a salva se ainda existir
-      setCliente((c) => (lista.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
+      // Veio pelo QR Code da mesa: cidade e mesa já escolhidas (uma vez só, ao abrir)
+      const link = mesaDoLink.current;
+      mesaDoLink.current = null;
+      const lojaDoLink = link && lista.find((cid) => cid.nome === link.cidade);
+      if (lojaDoLink && link.mesa <= (lojaDoLink.mesas || 0)) {
+        setCliente((c) => ({ ...c, cidade: lojaDoLink.nome }));
+        setRecebimento({ modo: 'mesa', mesa: link.mesa, mesaFixa: true });
+      } else {
+        // O cliente escolhe a cidade (ela define a filial e a taxa); só mantém a salva se ainda existir
+        setCliente((c) => (lista.some((cid) => cid.nome === c.cidade) ? c : { ...c, cidade: '' }));
+      }
       setStatusCidades('ok');
     } catch (err) {
       if (silencioso) return; // falha na atualização automática: mantém o que já tinha
@@ -163,8 +195,20 @@ export default function App() {
     };
   }, [digitosTelefone, versaoAcompanhamento, idAcompanhado]);
 
+  // A loja pode desligar a retirada ou as mesas: volta para entrega se a opção sumir
+  const modosDisponiveis = modosDaLoja(cidadeAtual);
+  useEffect(() => {
+    if (!cidadeAtual) return;
+    const modos = modosDaLoja(cidadeAtual);
+    const mesaInvalida = recebimento.modo === 'mesa' && recebimento.mesa > (cidadeAtual.mesas || 0);
+    if (!modos.includes(recebimento.modo) || mesaInvalida) setRecebimento(RECEBIMENTO_INICIAL);
+  }, [cidadeAtual, recebimento.modo, recebimento.mesa]);
+
   // ---------- Persistência local ----------
   useEffect(() => salvarStorage('sdz-cliente', cliente), [cliente]);
+  useEffect(() => {
+    if (recebimento.modo !== 'mesa') salvarStorage('sdz-modo', recebimento.modo);
+  }, [recebimento.modo]);
   useEffect(() => salvarStorage('sdz-carrinho', carrinho), [carrinho]);
 
   useEffect(() => {
@@ -179,7 +223,8 @@ export default function App() {
 
   // ---------- Totais ----------
   const subtotal = useMemo(() => arredondar(carrinho.reduce((acc, i) => acc + totalItem(i), 0)), [carrinho]);
-  const taxaEntrega = cidadeAtual?.taxa ?? 0;
+  // Retirada e mesa não pagam entrega
+  const taxaEntrega = recebimento.modo === 'entrega' ? cidadeAtual?.taxa ?? 0 : 0;
   const total = arredondar(subtotal + taxaEntrega);
 
   // ---------- Carrinho ----------
@@ -262,6 +307,8 @@ export default function App() {
 
     const payload = {
       telefone: cliente.telefone,
+      modo: recebimento.modo,
+      mesa: recebimento.modo === 'mesa' ? recebimento.mesa : null,
       cliente: {
         nome: cliente.nome.trim(),
         cidade: cliente.cidade,
@@ -290,6 +337,7 @@ export default function App() {
       const mensagem = montarMensagemWhatsapp({
         pedidoId: resposta.idpedido,
         cliente,
+        recebimento,
         carrinho,
         subtotal,
         taxaEntrega,
@@ -353,6 +401,9 @@ export default function App() {
         setCliente={setCliente}
         cidades={cidades}
         onEscolherCidade={escolherCidade}
+        recebimento={recebimento}
+        setRecebimento={setRecebimento}
+        modosDisponiveis={modosDisponiveis}
         onAvancar={abrirCardapio}
       />
     );
@@ -383,6 +434,8 @@ export default function App() {
         onRemover={removerItem}
         onObservacao={alterarObservacao}
         cidade={cliente.cidade}
+        rotuloTaxa={descreverRecebimento(recebimento, cliente).rotuloTaxa}
+        semTaxa={recebimento.modo !== 'entrega'}
         subtotal={subtotal}
         taxaEntrega={taxaEntrega}
         total={total}
@@ -405,6 +458,7 @@ export default function App() {
     conteudo = (
       <Revisao
         cliente={cliente}
+        recebimento={recebimento}
         carrinho={carrinho}
         subtotal={subtotal}
         taxaEntrega={taxaEntrega}
@@ -435,7 +489,11 @@ export default function App() {
 
   return (
     <div className="app" translate="no">
-      <Header cliente={cliente} mostrarCliente={statusCidades === 'ok' && etapa !== 'identificacao'} />
+      <Header
+        cliente={cliente}
+        recebimento={recebimento}
+        mostrarCliente={statusCidades === 'ok' && etapa !== 'identificacao'}
+      />
 
       <main className={`main ${mostrarBarra ? 'main--com-barra' : ''} ${mostrarWhatsapp ? 'main--com-whatsapp' : ''}`}>
         {statusCidades === 'ok' && (etapa === 'identificacao' || etapa === 'cardapio') && (

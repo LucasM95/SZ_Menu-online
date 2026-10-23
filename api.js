@@ -62,6 +62,8 @@ export async function carregarEmpresas() {
     aberta: e.aberta !== false,
     mensagem: e.mensagem || '',
     horarios: e.horarios || [],
+    permiteRetirada: Boolean(e.permiteRetirada), // retirada no balcão
+    mesas: e.mesas || 0, // 0 = sem pedido na mesa
   }));
 }
 
