@@ -98,8 +98,16 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
       </div>
 
       <div className="adm-pedido__cliente">
-        <strong>{pedido.cliente}</strong>
-        <span>{pedido.endereco}</span>
+        <strong>
+          {pedido.cliente}
+          {pedido.modo === 'mesa' && (
+            <span className="adm-tag adm-tag--mesa">
+              {pedido.principal ? `Incluído na mesa (pedido #${pedido.principal})` : 'Pedido na mesa'}
+            </span>
+          )}
+          {pedido.modo === 'retirada' && <span className="adm-tag adm-tag--mesa">Retirada no balcão</span>}
+        </strong>
+        {pedido.modo === 'entrega' || !pedido.modo ? <span>{pedido.endereco}</span> : null}
         {pedido.obs && <span className="adm-pedido__obs">{pedido.obs}</span>}
       </div>
 
@@ -170,7 +178,8 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
           <button type="button" className="adm-btn" disabled={ocupado} onClick={() => onStatus(pedido.id, 'Em andamento')}>
             <Undo2 size={16} aria-hidden="true" /> Voltar
           </button>
-        ) : (
+        ) : pedido.modo && pedido.modo !== 'entrega' ? null : (
+          // Mesa e retirada não saem para entrega
           <button
             type="button"
             className="adm-btn adm-btn--rota"

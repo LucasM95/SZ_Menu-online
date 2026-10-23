@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Copy, MapPin, Plus, QrCode, X } from 'lucide-react';
 import { formatarMoeda, mascaraHora, mascaraMoeda, mascaraTelefone, parseMoeda } from '../utils';
-import { listarLojas, salvarLoja } from './adminApi';
+import { linksDasMesas, listarLojas, salvarLoja } from './adminApi';
 import IntegracaoPdv from './IntegracaoPdv';
 import { imprimirQrMesas } from './mesasQr';
 
@@ -149,16 +149,17 @@ function EditorLoja({ loja, token, onSalvo, onCancelar, onSessaoExpirada }) {
             <button
               type="button"
               className="adm-btn"
-              disabled={!f.idempresa || !(parseInt(f.qtd_mesas, 10) > 0) || !f.cidade.trim()}
-              onClick={() => imprimirQrMesas(f.cidade.trim(), Math.min(200, parseInt(f.qtd_mesas, 10) || 0))}
-              title={!f.idempresa ? 'Salve a cidade antes de imprimir' : ''}
+              disabled={!f.idempresa || !(loja?.qtd_mesas > 0)}
+              onClick={() => imprimirQrMesas(() => linksDasMesas(token, f.idempresa))}
+              title={!(loja?.qtd_mesas > 0) ? 'Salve o número de mesas antes de imprimir' : ''}
             >
               <QrCode size={16} aria-hidden="true" /> Imprimir QR Codes das mesas
             </button>
           </div>
           <p className="adm-dica">
-            0 desliga o pedido na mesa. O pedido entra no PDV como &quot;Mesa 5&quot;, sem endereço, série 2. Cada QR
-            abre o site já na mesa certa (salve antes de imprimir se mudar o nome da cidade).
+            0 desliga o pedido na mesa. Só pede na mesa quem lê o QR Code dela (de casa não aparece essa opção).
+            O pedido entra no PDV como &quot;Mesa 5&quot;, sem endereço, série 2; se a mesa já estiver aberta, os
+            itens são incluídos nela. Salve antes de imprimir. Se trocar o ADMIN_SECRET do servidor, imprima de novo.
           </p>
         </div>
       </div>

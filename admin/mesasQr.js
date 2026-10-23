@@ -8,12 +8,16 @@ const esc = (t) =>
 // sempre apontar para o domínio oficial, mesmo se o painel for aberto por outro endereço.
 const SITE = (import.meta.env.VITE_SITE_URL || window.location.origin).replace(/\/$/, '');
 
-export function linkDaMesa(cidade, mesa) {
-  return `${SITE}/?cidade=${encodeURIComponent(cidade)}&mesa=${mesa}`;
+/** Link do QR: cidade, mesa e o código de segurança da mesa (sem ele o site não aceita pedido na mesa). */
+export function linkDaMesa(cidade, mesa, token) {
+  return `${SITE}/?cidade=${encodeURIComponent(cidade)}&mesa=${mesa}&t=${token}`;
 }
 
-/** Abre uma página A4 com os QR Codes das mesas (6 por folha) para imprimir e colocar nas mesas. */
-export async function imprimirQrMesas(cidade, qtdMesas) {
+/**
+ * Abre uma página A4 com os QR Codes das mesas (6 por folha) para imprimir e colocar nas mesas.
+ * buscarMesas: () => Promise<{ cidade, mesas: [{ mesa, token }] }> (os códigos vêm do servidor)
+ */
+export async function imprimirQrMesas(buscarMesas) {
   // A janela é aberta antes de gerar os QR para o navegador não bloquear como pop-up
   const janela = window.open('', '_blank', 'width=900,height=700');
   if (!janela) {
@@ -22,10 +26,18 @@ export async function imprimirQrMesas(cidade, qtdMesas) {
   }
   janela.document.write('<p style="font-family:Arial;padding:20px">Gerando os QR Codes…</p>');
 
+  let dados;
+  try {
+    dados = await buscarMesas();
+  } catch (err) {
+    janela.document.body.innerHTML = `<p style="font-family:Arial;padding:20px">Não foi possível gerar: ${esc(err.message)}</p>`;
+    return;
+  }
+  const { cidade } = dados;
   const cartoes = [];
-  for (let mesa = 1; mesa <= qtdMesas; mesa += 1) {
+  for (const { mesa, token } of dados.mesas) {
     // Correção de erro alta: continua lendo mesmo com o papel um pouco sujo ou amassado
-    const qr = await QRCode.toDataURL(linkDaMesa(cidade, mesa), { margin: 1, width: 420, errorCorrectionLevel: 'H' });
+    const qr = await QRCode.toDataURL(linkDaMesa(cidade, mesa, token), { margin: 1, width: 420, errorCorrectionLevel: 'H' });
     cartoes.push(`<div class="cartao">
       <div class="marca">Sanduba do Zé</div>
       <div class="mesa">MESA ${mesa}</div>

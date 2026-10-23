@@ -87,3 +87,5 @@ export const situacaoIntegracao = (token) => request('/admin/integracao', { toke
 export const gerarChaveIntegracao = (token) => request('/admin/integracao/chave', { method: 'POST', token });
 
 export const consultarChaveIntegracao = (token) => request('/admin/integracao/chave', { token });
+
+export const linksDasMesas = (token, idempresa) => request(`/admin/empresas/${idempresa}/mesas`, { token });
