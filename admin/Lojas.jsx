@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Check, Copy, MapPin, Plus, X } from 'lucide-react';
+import { Check, Copy, MapPin, Plus, QrCode, X } from 'lucide-react';
 import { formatarMoeda, mascaraHora, mascaraMoeda, mascaraTelefone, parseMoeda } from '../utils';
 import { listarLojas, salvarLoja } from './adminApi';
 import IntegracaoPdv from './IntegracaoPdv';
+import { imprimirQrMesas } from './mesasQr';
 
 const DIAS = [
   ['seg', 'Segunda'],
@@ -25,6 +26,8 @@ function paraFormulario(loja) {
     taxa: loja ? mascaraMoeda(Math.round((loja.taxaentrega || 0) * 100)) : '',
     ativo: loja?.ativo ?? true,
     fechado_temporariamente: loja?.fechado_temporariamente ?? false,
+    permite_retirada: loja?.permite_retirada ?? false,
+    qtd_mesas: String(loja?.qtd_mesas ?? 0),
     temHorario: Boolean(loja?.horario),
     horario: loja?.horario ? { ...horarioVazio(), ...loja.horario } : horarioVazio(),
     // dias fechados ficam guardados como null; no formulário viram "aberto: false"
@@ -60,6 +63,8 @@ function EditorLoja({ loja, token, onSalvo, onCancelar, onSessaoExpirada }) {
         taxaentrega: Number.isNaN(taxa) ? 0 : taxa,
         ativo: f.ativo,
         fechado_temporariamente: f.fechado_temporariamente,
+        permite_retirada: f.permite_retirada,
+        qtd_mesas: Math.min(200, parseInt(f.qtd_mesas, 10) || 0),
         horario: f.temHorario
           ? Object.fromEntries(DIAS.map(([d]) => [d, f.abertos[d] ? f.horario[d] : null]))
           : null,
@@ -119,6 +124,44 @@ function EditorLoja({ loja, token, onSalvo, onCancelar, onSessaoExpirada }) {
         />
         Fechar agora, temporariamente (ex.: imprevisto, chuva forte)
       </label>
+
+      <div className="adm-modos">
+        <p className="adm-modos__titulo">Formas de receber no site</p>
+        <p className="adm-dica">A entrega está sempre ligada. Retirada e mesa não cobram taxa de entrega.</p>
+        <label className="adm-check">
+          <input
+            type="checkbox"
+            checked={f.permite_retirada}
+            onChange={(e) => mudar('permite_retirada', e.target.checked)}
+          />
+          Aceitar pedidos para retirar no balcão (endereço vai como RETIRADA)
+        </label>
+        <div className="adm-modos__mesas">
+          <label htmlFor={`m-${id}`}>Pedido na mesa: número de mesas</label>
+          <div className="adm-modos__linha">
+            <input
+              id={`m-${id}`}
+              inputMode="numeric"
+              maxLength={3}
+              value={f.qtd_mesas}
+              onChange={(e) => mudar('qtd_mesas', e.target.value.replace(/\D/g, ''))}
+            />
+            <button
+              type="button"
+              className="adm-btn"
+              disabled={!f.idempresa || !(parseInt(f.qtd_mesas, 10) > 0) || !f.cidade.trim()}
+              onClick={() => imprimirQrMesas(f.cidade.trim(), Math.min(200, parseInt(f.qtd_mesas, 10) || 0))}
+              title={!f.idempresa ? 'Salve a cidade antes de imprimir' : ''}
+            >
+              <QrCode size={16} aria-hidden="true" /> Imprimir QR Codes das mesas
+            </button>
+          </div>
+          <p className="adm-dica">
+            0 desliga o pedido na mesa. O pedido entra no PDV como &quot;Mesa 5&quot;, sem endereço, série 2. Cada QR
+            abre o site já na mesa certa (salve antes de imprimir se mudar o nome da cidade).
+          </p>
+        </div>
+      </div>
 
       <div className="adm-horario">
         <label className="adm-check">
@@ -254,6 +297,8 @@ export default function Lojas({ token, filial, onSessaoExpirada }) {
                 <span className="adm-tags">
                   {!l.ativo && <span className="adm-tag adm-tag--cinza">Não atendida no site</span>}
                   {l.fechado_temporariamente && <span className="adm-tag adm-tag--aviso">Fechada temporariamente</span>}
+                  {l.permite_retirada && <span className="adm-tag">Retirada</span>}
+                  {l.qtd_mesas > 0 && <span className="adm-tag">{l.qtd_mesas} mesas</span>}
                 </span>
               </div>
             </button>

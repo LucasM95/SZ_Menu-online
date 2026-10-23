@@ -1017,3 +1017,39 @@
   -webkit-appearance: none;
   appearance: none;
 }
+
+/* ---------- Formas de receber (retirada / mesas) ---------- */
+.adm-modos {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  background: var(--superficie);
+}
+
+.adm-modos__titulo {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.adm-modos__mesas {
+  margin-top: 10px;
+}
+
+.adm-modos__linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.adm .adm-modos__linha input {
+  width: 80px;
+}
+
+.adm-tag--mesa {
+  margin-left: 8px;
+  vertical-align: middle;
+  background: var(--amarelo-claro, #fef3c7);
+  color: #92400e;
+}
