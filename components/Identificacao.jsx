@@ -7,7 +7,6 @@ import { apenasDigitos, mascaraTelefone } from '../utils';
 const MODOS = {
   entrega: { nome: 'Entrega', Icone: Bike },
   retirada: { nome: 'Retirada', Icone: Store },
-  mesa: { nome: 'Na mesa', Icone: UtensilsCrossed },
 };
 
 const TITULOS = {
@@ -32,7 +31,8 @@ export default function Identificacao({
   const naMesa = modo === 'mesa';
   const escolherModo = (novo) => {
     setErro('');
-    setRecebimento((r) => ({ ...r, modo: novo, mesa: novo === 'mesa' ? r.mesa : null, mesaFixa: false }));
+    // Sair da mesa ("Não estou na loja") ou trocar entre entrega e retirada; mesa só pelo QR Code
+    setRecebimento((r) => ({ ...r, modo: novo, mesa: null, mesaFixa: false, mesaToken: '' }));
   };
   const [erro, setErro] = useState('');
   const ultimaBusca = useRef('');
@@ -177,25 +177,6 @@ export default function Identificacao({
               <p className="modo-info">Retire no balcão da loja de {loja.nome}. Sem taxa de entrega.</p>
             )}
           </fieldset>
-        )}
-
-        {naMesa && !recebimento.mesaFixa && loja && (
-          <div className="campo">
-            <label className="campo__rotulo" htmlFor="mesa">Número da mesa</label>
-            <select
-              id="mesa"
-              className="input"
-              value={recebimento.mesa || ''}
-              onChange={(e) => setRecebimento((r) => ({ ...r, mesa: parseInt(e.target.value, 10) || null }))}
-            >
-              <option value="">Escolha a mesa</option>
-              {Array.from({ length: loja.mesas || 0 }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>
-                  Mesa {n}
-                </option>
-              ))}
-            </select>
-          </div>
         )}
 
         <div className="campo">
