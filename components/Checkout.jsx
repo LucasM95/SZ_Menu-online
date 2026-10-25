@@ -18,6 +18,7 @@ export default function Checkout({
   setPagamento,
   avisoExterno,
   lojaFechada = false,
+  pagarNoCaixa = false, // pedido na mesa: o pagamento é escolhido no caixa, ao fechar a mesa
   onVoltar,
   onRevisar,
 }) {
@@ -32,7 +33,7 @@ export default function Checkout({
       setErro('Seu carrinho está vazio.');
       return;
     }
-    const msg = validarPagamento(pagamento, tiposPagamento, total);
+    const msg = pagarNoCaixa ? '' : validarPagamento(pagamento, tiposPagamento, total);
     if (msg) {
       setErro(msg);
       return;
@@ -135,99 +136,106 @@ export default function Checkout({
             </div>
           </div>
 
-          <div>
-            <div className="pagamento-topo">
+          {pagarNoCaixa ? (
+            <div className="pagar-no-caixa">
               <h3 className="subtitulo">Pagamento</h3>
-              <label className="check-multiplos">
-                <input
-                  type="checkbox"
-                  checked={pagamento.multiplos}
-                  onChange={(e) => setPagamento({ multiplos: e.target.checked, unicoId: null, trocoPara: '', valores: {} })}
-                />
-                Dividir em mais de uma forma
-              </label>
+              <p>Você paga no caixa, ao fechar a mesa.</p>
             </div>
-
-            {tiposPagamento.length === 0 ? (
-              <p className="erro-inline">
-                Nenhuma forma de pagamento disponível no momento. Fale com a gente pelo WhatsApp.
-              </p>
-            ) : !pagamento.multiplos ? (
-              <>
-                <div className="opcoes-pgto">
-                  {tiposPagamento.map((tp) => {
-                    const ativo = pagamento.unicoId === tp.id;
-                    return (
-                      <button
-                        key={tp.id}
-                        type="button"
-                        className={`opcao-pgto ${ativo ? 'opcao-pgto--ativa' : ''}`}
-                        aria-pressed={ativo}
-                        onClick={() =>
-                          setPagamento((p) => ({ ...p, unicoId: tp.id, trocoPara: tp.dinheiro ? p.trocoPara : '' }))
-                        }
-                      >
-                        {ativo && <Check size={16} aria-hidden="true" />}
-                        {tp.descricao}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {tipoUnico?.dinheiro && (
-                  <div className="bloco-troco">
-                    <label className="campo__rotulo" htmlFor="troco">
-                      Troco para quanto? <span className="campo__opcional">(deixe em branco se não precisar)</span>
-                    </label>
-                    <div className="campo-moeda">
-                      <span>R$</span>
-                      <input
-                        id="troco"
-                        className="input"
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="0,00"
-                        value={pagamento.trocoPara}
-                        onChange={(e) => setPagamento((p) => ({ ...p, trocoPara: mascaraMoeda(e.target.value) }))}
-                      />
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="multiplos">
-                {tiposPagamento.map((tp) => (
-                  <div key={tp.id} className="multiplos__linha">
-                    <label htmlFor={`pgto-${tp.id}`}>{tp.descricao}</label>
-                    <div className="campo-moeda campo-moeda--compacto">
-                      <span>R$</span>
-                      <input
-                        id={`pgto-${tp.id}`}
-                        className="input input--pequeno"
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="0,00"
-                        value={pagamento.valores[tp.id] || ''}
-                        onChange={(e) =>
-                          setPagamento((p) => ({
-                            ...p,
-                            valores: { ...p.valores, [tp.id]: mascaraMoeda(e.target.value) },
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
-                ))}
-                <p className={`status-soma ${Math.abs(diferenca) < 0.01 ? 'status-soma--ok' : ''}`}>
-                  {Math.abs(diferenca) < 0.01
-                    ? 'Valores conferem com o total.'
-                    : diferenca > 0
-                      ? `Faltam ${formatarMoeda(diferenca)}`
-                      : `Passou ${formatarMoeda(-diferenca)} do total`}
-                </p>
+          ) : (
+            <div>
+              <div className="pagamento-topo">
+                <h3 className="subtitulo">Pagamento</h3>
+                <label className="check-multiplos">
+                  <input
+                    type="checkbox"
+                    checked={pagamento.multiplos}
+                    onChange={(e) => setPagamento({ multiplos: e.target.checked, unicoId: null, trocoPara: '', valores: {} })}
+                  />
+                  Dividir em mais de uma forma
+                </label>
               </div>
-            )}
-          </div>
+
+              {tiposPagamento.length === 0 ? (
+                <p className="erro-inline">
+                  Nenhuma forma de pagamento disponível no momento. Fale com a gente pelo WhatsApp.
+                </p>
+              ) : !pagamento.multiplos ? (
+                <>
+                  <div className="opcoes-pgto">
+                    {tiposPagamento.map((tp) => {
+                      const ativo = pagamento.unicoId === tp.id;
+                      return (
+                        <button
+                          key={tp.id}
+                          type="button"
+                          className={`opcao-pgto ${ativo ? 'opcao-pgto--ativa' : ''}`}
+                          aria-pressed={ativo}
+                          onClick={() =>
+                            setPagamento((p) => ({ ...p, unicoId: tp.id, trocoPara: tp.dinheiro ? p.trocoPara : '' }))
+                          }
+                        >
+                          {ativo && <Check size={16} aria-hidden="true" />}
+                          {tp.descricao}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {tipoUnico?.dinheiro && (
+                    <div className="bloco-troco">
+                      <label className="campo__rotulo" htmlFor="troco">
+                        Troco para quanto? <span className="campo__opcional">(deixe em branco se não precisar)</span>
+                      </label>
+                      <div className="campo-moeda">
+                        <span>R$</span>
+                        <input
+                          id="troco"
+                          className="input"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0,00"
+                          value={pagamento.trocoPara}
+                          onChange={(e) => setPagamento((p) => ({ ...p, trocoPara: mascaraMoeda(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="multiplos">
+                  {tiposPagamento.map((tp) => (
+                    <div key={tp.id} className="multiplos__linha">
+                      <label htmlFor={`pgto-${tp.id}`}>{tp.descricao}</label>
+                      <div className="campo-moeda campo-moeda--compacto">
+                        <span>R$</span>
+                        <input
+                          id={`pgto-${tp.id}`}
+                          className="input input--pequeno"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0,00"
+                          value={pagamento.valores[tp.id] || ''}
+                          onChange={(e) =>
+                            setPagamento((p) => ({
+                              ...p,
+                              valores: { ...p.valores, [tp.id]: mascaraMoeda(e.target.value) },
+                            }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <p className={`status-soma ${Math.abs(diferenca) < 0.01 ? 'status-soma--ok' : ''}`}>
+                    {Math.abs(diferenca) < 0.01
+                      ? 'Valores conferem com o total.'
+                      : diferenca > 0
+                        ? `Faltam ${formatarMoeda(diferenca)}`
+                        : `Passou ${formatarMoeda(-diferenca)} do total`}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {mensagem && <p className="erro-inline" role="alert">{mensagem}</p>}
 
