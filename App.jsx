@@ -483,6 +483,8 @@ export default function App() {
         pedidoId={pedidoFinalizado?.id}
         linkWhatsapp={pedidoFinalizado?.whatsapp}
         acompanhamento={pedidosEmCurso.find((p) => p.id === pedidoFinalizado?.id)}
+        naMesa={recebimento.modo === 'mesa'}
+        semTelefone={!cliente.telefone.replace(/\D/g, '')}
         onNovoPedido={() => {
           setPedidoFinalizado(null);
           setEtapa('cardapio');

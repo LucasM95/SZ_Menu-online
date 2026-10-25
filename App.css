@@ -1566,7 +1566,7 @@ body {
 /* Linha do tempo: Recebido → Em preparo → Saiu para entrega → Entregue */
 .acomp__etapas {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(var(--etapas, 4), 1fr);
   gap: 4px;
   margin: 0;
   padding: 0;
@@ -1589,6 +1589,26 @@ body {
 
 .acomp__etapas li.atual {
   color: var(--amarelo);
+}
+
+/* Etapa atual que ainda não aconteceu (ex.: aguardando a loja receber): barra piscando devagar */
+.acomp__etapas li.atual.pendente {
+  color: #c9b49c;
+  border-top-color: #4a2a1f;
+  animation: acomp-aguardando 1.6s ease-in-out infinite;
+}
+
+/* pulsa num tom fraco: mostra que está esperando, sem parecer etapa concluída */
+@keyframes acomp-aguardando {
+  50% {
+    border-top-color: #7a5a2c;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acomp__etapas li.atual.pendente {
+    animation: none;
+  }
 }
 
 .acomp__detalhe {
