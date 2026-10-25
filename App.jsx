@@ -226,6 +226,12 @@ export default function App() {
 
   // ---------- Totais ----------
   const subtotal = useMemo(() => arredondar(carrinho.reduce((acc, i) => acc + totalItem(i), 0)), [carrinho]);
+  // Texto do pagamento na revisão e na mensagem do WhatsApp
+  const textoPagamento = () =>
+    recebimento.modo === 'mesa'
+      ? 'No caixa, ao fechar a mesa'
+      : descreverPagamento(pagamento, dados?.tiposPagamento || [], total);
+
   // Retirada e mesa não pagam entrega
   const taxaEntrega = recebimento.modo === 'entrega' ? cidadeAtual?.taxa ?? 0 : 0;
   const total = arredondar(subtotal + taxaEntrega);
@@ -302,7 +308,8 @@ export default function App() {
       setErroEnvio(avisoFechado);
       return;
     }
-    const erro = validarPagamento(pagamento, dados.tiposPagamento, total);
+    // Mesa: o pagamento é escolhido no caixa, ao fechar a mesa
+    const erro = recebimento.modo === 'mesa' ? '' : validarPagamento(pagamento, dados.tiposPagamento, total);
     if (erro) {
       setErroEnvio(erro);
       return;
@@ -330,8 +337,9 @@ export default function App() {
             }
       ),
       totalGeral: total,
-      formasPagamento: montarFormasPagamento(pagamento, total),
-      trocoPara: trocoParaValor(pagamento, dados.tiposPagamento),
+      // Mesa: o pagamento é escolhido no caixa, ao fechar a mesa
+      formasPagamento: recebimento.modo === 'mesa' ? [] : montarFormasPagamento(pagamento, total),
+      trocoPara: recebimento.modo === 'mesa' ? null : trocoParaValor(pagamento, dados.tiposPagamento),
     };
 
     setEnviando(true);
@@ -346,7 +354,7 @@ export default function App() {
         subtotal,
         taxaEntrega,
         total,
-        descricaoPagamento: descreverPagamento(pagamento, dados.tiposPagamento, total),
+        descricaoPagamento: textoPagamento(),
       });
       setVersaoAcompanhamento((v) => v + 1);
       setPedidoFinalizado({
@@ -440,6 +448,7 @@ export default function App() {
         cidade={cliente.cidade}
         rotuloTaxa={descreverRecebimento(recebimento, cliente).rotuloTaxa}
         semTaxa={recebimento.modo !== 'entrega'}
+        pagarNoCaixa={recebimento.modo === 'mesa'}
         subtotal={subtotal}
         taxaEntrega={taxaEntrega}
         total={total}
@@ -467,7 +476,7 @@ export default function App() {
         subtotal={subtotal}
         taxaEntrega={taxaEntrega}
         total={total}
-        descricaoPagamento={descreverPagamento(pagamento, dados.tiposPagamento, total)}
+        descricaoPagamento={textoPagamento()}
         enviando={enviando}
         erro={erroEnvio}
         onVoltar={() => {

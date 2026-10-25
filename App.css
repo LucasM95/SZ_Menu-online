@@ -1817,3 +1817,16 @@ body {
   cursor: pointer;
   padding: 4px;
 }
+
+/* Mesa: pagamento no caixa */
+.pagar-no-caixa {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--amarelo-claro);
+  border: 1px solid var(--amarelo);
+}
+
+.pagar-no-caixa p {
+  margin-top: 4px;
+  font-weight: 600;
+}
