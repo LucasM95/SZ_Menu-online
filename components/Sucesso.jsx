@@ -1,7 +1,9 @@
 import { CheckCircle, MessageCircle } from 'lucide-react';
-import { CartaoAcompanhamento } from './PedidosEmCurso';
+import { CartaoAcompanhamento, pedidoFinalizado } from './PedidosEmCurso';
 
-export default function Sucesso({ pedidoId, linkWhatsapp, acompanhamento, onNovoPedido }) {
+export default function Sucesso({ pedidoId, linkWhatsapp, acompanhamento, naMesa = false, semTelefone = false, onNovoPedido }) {
+  // Mesa: quando a mesa é fechada no caixa (ou no app de fechamento), o cartão some
+  const mesaFechada = naMesa && acompanhamento && pedidoFinalizado(acompanhamento);
   return (
     <section className="card card--estreito sucesso">
       <CheckCircle size={56} className="sucesso__icone" aria-hidden="true" />
@@ -9,14 +11,21 @@ export default function Sucesso({ pedidoId, linkWhatsapp, acompanhamento, onNovo
       <p className="sucesso__numero">Pedido nº {pedidoId}</p>
 
       {/* Acompanhamento ao vivo: atualiza sozinho enquanto a tela estiver aberta */}
-      <div className="sucesso__acomp">
-        {acompanhamento ? (
-          <CartaoAcompanhamento pedido={acompanhamento} comContato={false} />
-        ) : (
-          <p className="texto-suave">Buscando o andamento do seu pedido…</p>
-        )}
-        <p className="sucesso__dica">Esta tela atualiza sozinha. Pode deixar aberta para acompanhar.</p>
-      </div>
+      {naMesa && semTelefone ? (
+        // Sem WhatsApp não há como acompanhar: o pedido já foi enviado para o caixa
+        <p className="texto-suave">Seu pedido foi enviado para o caixa e chega na sua mesa em breve.</p>
+      ) : mesaFechada ? (
+        <p className="texto-suave">Mesa fechada. Obrigado pela visita!</p>
+      ) : (
+        <div className="sucesso__acomp">
+          {acompanhamento ? (
+            <CartaoAcompanhamento pedido={acompanhamento} comContato={false} />
+          ) : (
+            <p className="texto-suave">Buscando o andamento do seu pedido…</p>
+          )}
+          <p className="sucesso__dica">Esta tela atualiza sozinha. Pode deixar aberta para acompanhar.</p>
+        </div>
+      )}
 
       {linkWhatsapp ? (
         <>

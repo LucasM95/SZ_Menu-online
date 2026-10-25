@@ -1,29 +1,53 @@
 import { useState } from 'react';
-import { Ban, Bike, ChefHat, ChevronDown, MessageCircle, PartyPopper } from 'lucide-react';
+import { Ban, Bike, ChefHat, ChevronDown, Clock, MessageCircle, PartyPopper, Store, UtensilsCrossed } from 'lucide-react';
 import { formatarMoeda, linkWhatsapp } from '../utils';
 
-const PASSOS = ['Recebido', 'Em preparo', 'Saiu para entrega', 'Entregue'];
+const PASSOS = {
+  entrega: ['Recebido', 'Em preparo', 'Saiu para entrega', 'Entregue'],
+  retirada: ['Recebido', 'Em preparo', 'Retirado'],
+  mesa: [], // mesa: só mostra que a loja recebeu (sem etapas)
+};
 
-// Como cada status aparece para o cliente
-function situacao(status) {
-  switch ((status || '').trim().toLowerCase()) {
-    case 'em rota de entrega':
-      return { titulo: 'Saiu para entrega', Icone: Bike, nivel: 2 };
-    case 'baixado':
-      return { titulo: 'Pedido entregue. Bom apetite!', Icone: PartyPopper, nivel: 3 };
-    case 'cancelado':
-      return { titulo: 'Pedido cancelado', Icone: Ban, nivel: -1 };
-    default:
-      return { titulo: 'Em preparo', Icone: ChefHat, nivel: 1 };
+/**
+ * Como cada status aparece para o cliente.
+ * "Recebido" só depois que o PDV da loja puxou o pedido; antes disso, "Aguardando a loja".
+ * pendente = a etapa atual ainda não aconteceu (barra apagada).
+ */
+function situacao(pedido) {
+  const status = (pedido.status || '').trim().toLowerCase();
+  const modo = pedido.modo || 'entrega';
+  if (status === 'cancelado') return { titulo: 'Pedido cancelado', Icone: Ban, nivel: -1 };
+  if (modo === 'mesa') {
+    return pedido.recebido
+      ? { titulo: `Pedido recebido · Mesa ${pedido.mesa ?? ''}`.trim(), Icone: UtensilsCrossed, nivel: 0 }
+      : { titulo: 'Enviando para a loja…', Icone: Clock, nivel: 0, pendente: true };
   }
+  const ultimo = PASSOS[modo].length - 1;
+  if (status === 'baixado') {
+    return modo === 'retirada'
+      ? { titulo: 'Pedido retirado. Bom apetite!', Icone: PartyPopper, nivel: ultimo }
+      : { titulo: 'Pedido entregue. Bom apetite!', Icone: PartyPopper, nivel: ultimo };
+  }
+  if (status === 'em rota de entrega' && modo === 'entrega') {
+    return { titulo: 'Saiu para entrega', Icone: Bike, nivel: 2 };
+  }
+  if (!pedido.recebido) {
+    return { titulo: 'Aguardando a loja', Icone: Clock, nivel: 0, pendente: true };
+  }
+  return {
+    titulo: modo === 'retirada' ? 'Em preparo · retire no balcão' : 'Em preparo',
+    Icone: modo === 'retirada' ? Store : ChefHat,
+    nivel: 1,
+  };
 }
 
 export const pedidoFinalizado = (p) => ['baixado', 'cancelado'].includes((p.status || '').trim().toLowerCase());
 
 export function CartaoAcompanhamento({ pedido, comContato = true }) {
   const [aberto, setAberto] = useState(false);
-  const { titulo, Icone, nivel } = situacao(pedido.status);
+  const { titulo, Icone, nivel, pendente } = situacao(pedido);
   const cancelado = nivel < 0;
+  const passos = PASSOS[pedido.modo] || PASSOS.entrega;
   const contato = pedido.whatsappLoja
     ? linkWhatsapp(pedido.whatsappLoja, `Olá! Gostaria de saber sobre o meu pedido nº ${pedido.id}.`)
     : null;
@@ -44,14 +68,21 @@ export function CartaoAcompanhamento({ pedido, comContato = true }) {
 
       {cancelado ? (
         <p className="acomp__aviso">A loja cancelou este pedido. Se tiver alguma dúvida, fale com a gente pelo WhatsApp.</p>
-      ) : (
-        <ol className="acomp__etapas" aria-label="Andamento do pedido">
-          {PASSOS.map((passo, i) => (
-            <li key={passo} className={i < nivel ? 'feita' : i === nivel ? 'feita atual' : ''}>
+      ) : passos.length > 0 ? (
+        <ol className="acomp__etapas" style={{ '--etapas': passos.length }} aria-label="Andamento do pedido">
+          {passos.map((passo, i) => (
+            <li
+              key={passo}
+              className={i < nivel ? 'feita' : i === nivel ? (pendente ? 'atual pendente' : 'feita atual') : ''}
+            >
               {passo}
             </li>
           ))}
         </ol>
+      ) : pendente ? (
+        <p className="acomp__aviso">Assim que o caixa receber, seu pedido vai para a cozinha.</p>
+      ) : (
+        <p className="acomp__aviso">O caixa já recebeu. Seu pedido chega na mesa em breve.</p>
       )}
 
       {aberto && (
@@ -67,7 +98,8 @@ export function CartaoAcompanhamento({ pedido, comContato = true }) {
           </ul>
           <p>
             {pedido.desconto > 0 && <>Desconto: −{formatarMoeda(pedido.desconto)} · </>}
-            Entrega: {formatarMoeda(pedido.taxaEntrega)} · <strong>Total: {formatarMoeda(pedido.total)}</strong>
+            {pedido.modo === 'entrega' || !pedido.modo ? <>Entrega: {formatarMoeda(pedido.taxaEntrega)} · </> : null}
+            <strong>Total: {formatarMoeda(pedido.total)}</strong>
           </p>
           <p>
             Pagamento: {pedido.pagamentos.join(' + ') || '—'}
