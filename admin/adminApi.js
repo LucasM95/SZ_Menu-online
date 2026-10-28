@@ -89,3 +89,7 @@ export const gerarChaveIntegracao = (token) => request('/admin/integracao/chave'
 export const consultarChaveIntegracao = (token) => request('/admin/integracao/chave', { token });
 
 export const linksDasMesas = (token, idempresa) => request(`/admin/empresas/${idempresa}/mesas`, { token });
+
+// Grupo do PDV "só na mesa": todos os produtos dele saem da entrega e da retirada
+export const salvarGrupo = (token, idgrupo, soMesa) =>
+  request(`/admin/grupos/${idgrupo}`, { method: 'PUT', body: { soMesa }, token });

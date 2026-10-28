@@ -1053,3 +1053,17 @@
   background: var(--amarelo-claro, #fef3c7);
   color: #92400e;
 }
+
+/* Cabeçalho do grupo na aba Produtos (com "Grupo só na mesa") */
+.adm-grupo__cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm .adm-grupo__mesa {
+  margin: 0;
+  font-size: 0.85rem;
+}

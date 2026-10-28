@@ -12,6 +12,7 @@ import {
   prepararImagem,
   removerFoto,
   removerFotoPromocao,
+  salvarGrupo,
   salvarProduto,
   salvarPromocao,
   salvarSessao,
@@ -115,6 +116,7 @@ function Editor({ tipo, item, token, onSalvo, onFechar, onSessaoExpirada }) {
     secao: item.secao || '',
     ordem: item.ordem ?? '',
     visivel: item.visivel,
+    ...(ehPromo ? {} : { soMesa: Boolean(item.soMesa) }),
   });
   const [foto, setFoto] = useState(item.foto);
   const [status, setStatus] = useState({ tipo: '', texto: '' });
@@ -264,6 +266,16 @@ function Editor({ tipo, item, token, onSalvo, onFechar, onSessaoExpirada }) {
           Mostrar no cardápio online
         </label>
 
+        {!ehPromo && (
+          <label className="adm-check">
+            <input type="checkbox" checked={form.soMesa} onChange={campo('soMesa')} />
+            Só para pedido na mesa (não aparece na entrega nem na retirada)
+          </label>
+        )}
+        {!ehPromo && item.grupoSoMesa && (
+          <p className="adm-dica">O grupo deste produto inteiro já está marcado como só na mesa.</p>
+        )}
+
         {status.texto && (
           <p className={status.tipo === 'erro' ? 'adm-erro' : 'adm-ok'} role="status">
             {status.texto}
@@ -407,6 +419,21 @@ function Painel({ sessao, onSair }) {
   const atualizar = (cod, mudancas) =>
     setProdutos((lista) => lista.map((p) => (p.codproduto === cod ? { ...p, ...mudancas } : p)));
 
+  // Grupo inteiro "só na mesa" (ex.: cervejas)
+  const [salvandoGrupo, setSalvandoGrupo] = useState(null);
+  const marcarGrupo = async (grupoId, soMesa) => {
+    setSalvandoGrupo(grupoId);
+    try {
+      await salvarGrupo(sessao.token, grupoId, soMesa);
+      setProdutos((lista) => lista.map((p) => (p.grupoId === grupoId ? { ...p, grupoSoMesa: soMesa } : p)));
+    } catch (err) {
+      if (err.status === 401) sessaoExpirada();
+      else setErro(err.message);
+    } finally {
+      setSalvandoGrupo(null);
+    }
+  };
+
   const contagem = (id) => produtos.filter(FILTROS.find((f) => f.id === id).teste).length;
 
   return (
@@ -491,7 +518,20 @@ function Painel({ sessao, onSair }) {
 
         {grupos.map(([grupo, itens]) => (
           <section key={grupo} className="adm-grupo">
-            <h2>{sugestaoNome(grupo)}</h2>
+            <div className="adm-grupo__cab">
+              <h2>{sugestaoNome(grupo)}</h2>
+              {itens[0]?.grupoId != null && !itens[0].adicional && (
+                <label className="adm-check adm-grupo__mesa" title="Todos os produtos deste grupo só aparecem para pedido na mesa">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(itens[0].grupoSoMesa)}
+                    disabled={salvandoGrupo === itens[0].grupoId}
+                    onChange={(e) => marcarGrupo(itens[0].grupoId, e.target.checked)}
+                  />
+                  Grupo só na mesa
+                </label>
+              )}
+            </div>
             <ul>
               {itens.map((p) => (
                 <li key={p.codproduto} className={`adm-item ${aberto === p.codproduto ? 'adm-item--aberto' : ''}`}>
@@ -521,6 +561,7 @@ function Painel({ sessao, onSair }) {
                           </span>
                         )}
                         {p.adicional && <span className="adm-tag">Adicional</span>}
+                        {(p.soMesa || p.grupoSoMesa) && <span className="adm-tag adm-tag--mesa">Só na mesa</span>}
                         {p.secao && <span className="adm-tag">{p.secao}</span>}
                         {!p.descricao && !p.adicional && <span className="adm-tag adm-tag--aviso">Sem descrição</span>}
                       </span>
