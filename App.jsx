@@ -226,6 +226,33 @@ export default function App() {
 
   // ---------- Totais ----------
   const subtotal = useMemo(() => arredondar(carrinho.reduce((acc, i) => acc + totalItem(i), 0)), [carrinho]);
+  // Itens "só na mesa" (ex.: cervejas) aparecem só para quem está na mesa; grupo vazio some
+  const cardapioDoModo = useMemo(() => {
+    if (!dados) return { categorias: [], produtos: [], promocoes: [] };
+    if (recebimento.modo === 'mesa') return dados;
+    const produtos = dados.produtos.filter((p) => !p.soMesa);
+    const comProduto = new Set(produtos.map((p) => p.categoriaId));
+    return {
+      categorias: dados.categorias.filter((c) => comProduto.has(c.id)),
+      produtos,
+      promocoes: dados.promocoes.filter((p) => !p.soMesa),
+    };
+  }, [dados, recebimento.modo]);
+
+  // Saiu da mesa ("Não estou na loja") com algo "só na mesa" no carrinho: tira e avisa
+  useEffect(() => {
+    if (!dados || recebimento.modo === 'mesa') return;
+    const soMesaProd = new Set(dados.produtos.filter((p) => p.soMesa).map((p) => p.id));
+    const soMesaPromo = new Set(dados.promocoes.filter((p) => p.soMesa).map((p) => p.id));
+    const proibido = (i) => (i.promocaoId ? soMesaPromo.has(i.promocaoId) : soMesaProd.has(i.produtoId));
+    setCarrinho((c) => {
+      if (!c.some(proibido)) return c;
+      setAviso('Itens disponíveis só na mesa foram retirados do carrinho.');
+      return c.filter((i) => !proibido(i));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados, recebimento.modo]);
+
   // Texto do pagamento na revisão e na mensagem do WhatsApp
   const textoPagamento = () =>
     recebimento.modo === 'mesa'
@@ -429,9 +456,9 @@ export default function App() {
     conteudo = (
       <Cardapio
         key={cardapio.filial}
-        categorias={dados.categorias}
-        produtos={dados.produtos}
-        promocoes={dados.promocoes}
+        categorias={cardapioDoModo.categorias}
+        produtos={cardapioDoModo.produtos}
+        promocoes={cardapioDoModo.promocoes}
         loja={cidadeAtual}
         onEscolher={escolherProduto}
         onEscolherPromocao={adicionarPromocao}
