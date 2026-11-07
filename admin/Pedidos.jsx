@@ -108,6 +108,7 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
           {pedido.modo === 'retirada' && <span className="adm-tag adm-tag--mesa">Retirada no balcão</span>}
         </strong>
         {pedido.modo === 'entrega' || !pedido.modo ? <span>{pedido.endereco}</span> : null}
+        {pedido.entregador && <span className="adm-pedido__entregador">Entregador: {pedido.entregador}</span>}
         {pedido.obs && <span className="adm-pedido__obs">{pedido.obs}</span>}
       </div>
 

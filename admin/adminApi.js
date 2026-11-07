@@ -93,3 +93,8 @@ export const linksDasMesas = (token, idempresa) => request(`/admin/empresas/${id
 // Grupo do PDV "só na mesa": todos os produtos dele saem da entrega e da retirada
 export const salvarGrupo = (token, idgrupo, soMesa) =>
   request(`/admin/grupos/${idgrupo}`, { method: 'PUT', body: { soMesa }, token });
+
+// Entregadores: qual usuário do painel é qual funcionário do PDV
+export const listarEntregadores = (token) => request('/admin/entregadores', { token });
+export const salvarEntregador = (token, login, matricula) =>
+  request(`/admin/entregadores/${encodeURIComponent(login)}`, { method: 'PUT', body: { matricula }, token });
