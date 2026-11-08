@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Check, Copy, MapPin, Plus, QrCode, X } from 'lucide-react';
 import { formatarMoeda, mascaraHora, mascaraMoeda, mascaraTelefone, parseMoeda } from '../utils';
 import { linksDasMesas, listarLojas, salvarLoja } from './adminApi';
-import Entregadores from './Entregadores';
 import IntegracaoPdv from './IntegracaoPdv';
 import { imprimirQrMesas } from './mesasQr';
 
@@ -274,7 +273,6 @@ export default function Lojas({ token, filial, onSessaoExpirada }) {
   return (
     <>
     <IntegracaoPdv token={token} onSessaoExpirada={onSessaoExpirada} />
-    <Entregadores token={token} onSessaoExpirada={onSessaoExpirada} />
     <section className="adm-grupo">
       <p className="adm-suave adm-explica">
         Cidades atendidas pela filial {filial}: WhatsApp, taxa de entrega e horário de atendimento. Fora do horário, o
