@@ -23,7 +23,12 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
     processando.current = true;
     try {
       const r = await acao();
-      mostrar('ok', `Pedido nº ${r.id}${r.cliente ? ` (${r.cliente})` : ''} saiu para entrega.`);
+      if (r.origem === 'pdv') {
+        // Pedido lançado no caixa: a nuvem só avisa o PDV, que muda o status e grava o repasse
+        mostrar('ok', `Pedido nº ${r.id} do caixa: saída enviada ao PDV${r.entregador ? ` (${r.entregador})` : ''}.`);
+      } else {
+        mostrar('ok', `Pedido nº ${r.id}${r.cliente ? ` (${r.cliente})` : ''} saiu para entrega.`);
+      }
       onLido();
     } catch (err) {
       if (err.status === 401) onSessaoExpirada();
@@ -92,8 +97,10 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
     e.preventDefault();
     const id = Number(numero.replace(/\D/g, ''));
     if (!id) return;
+    const doCaixa = /^\s*p/i.test(numero); // "P5002" = pedido lançado no caixa (PDV)
     setNumero('');
     registrar(async () => {
+      if (doCaixa) return saidaPorQrCode(token, `P${id}`);
       await mudarStatusPedido(token, id, 'Em rota de entrega');
       return { id };
     });
@@ -133,8 +140,7 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
 
       <form className="adm-qr__manual" onSubmit={enviarNumero}>
         <input
-          inputMode="numeric"
-          placeholder="Ou digite o nº do pedido"
+          placeholder="Nº do pedido (caixa: P123)"
           aria-label="Número do pedido"
           value={numero}
           onChange={(e) => setNumero(e.target.value)}
