@@ -473,7 +473,7 @@ function Painel({ sessao, onSair }) {
         </nav>
 
         {aba === 'pedidos' ? (
-          <Pedidos token={sessao.token} onSessaoExpirada={sessaoExpirada} />
+          <Pedidos token={sessao.token} permissoes={sessao.permissoes} onSessaoExpirada={sessaoExpirada} />
         ) : aba === 'lojas' ? (
           <Lojas token={sessao.token} filial={sessao.filial} onSessaoExpirada={sessaoExpirada} />
         ) : aba === 'promocoes' ? (

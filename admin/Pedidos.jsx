@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ban, Bike, CheckCheck, ChevronDown, Clock, MessageCircle, Printer, QrCode, RefreshCw, Search, Undo2, X } from 'lucide-react';
 import { apenasDigitos, formatarMoeda, linkWhatsapp } from '../utils';
-import { listarPedidos, mudarStatusPedido } from './adminApi';
+import { listarPedidos, mudarStatusLote, mudarStatusPedido } from './adminApi';
 import { imprimirComanda } from './comanda';
 import LeitorQr from './LeitorQr';
 
@@ -67,7 +67,7 @@ function linkCliente(pedido) {
   return linkWhatsapp(`55${digitos}`, texto);
 }
 
-function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
+function CartaoPedido({ pedido, novo, ocupado, onStatus, podeCancelar = true, selecionavel = false, selecionado = false, onSelecionar }) {
   const [aberto, setAberto] = useState(false);
   const emRota = pedido.status === 'Em rota de entrega';
   const atrasado = pedido.minutos != null && pedido.minutos >= ATRASO_MINUTOS;
@@ -84,8 +84,21 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
   };
 
   return (
-    <li className={`adm-pedido ${novo ? 'adm-pedido--novo' : ''} ${emRota ? 'adm-pedido--rota' : ''}`}>
+    <li
+      className={`adm-pedido ${novo ? 'adm-pedido--novo' : ''} ${emRota ? 'adm-pedido--rota' : ''} ${
+        selecionado ? 'adm-pedido--selecionado' : ''
+      }`}
+    >
       <div className="adm-pedido__topo">
+        {selecionavel && (
+          <input
+            type="checkbox"
+            className="adm-pedido__check"
+            checked={selecionado}
+            onChange={() => onSelecionar(pedido.id)}
+            aria-label={`Selecionar o pedido nº ${pedido.id}`}
+          />
+        )}
         <span className="adm-pedido__numero">#{pedido.id}</span>
         <span className={`adm-tag ${emRota ? 'adm-tag--rota' : 'adm-tag--andamento'}`}>{pedido.status}</span>
         {novo && <span className="adm-tag adm-tag--novo">Novo</span>}
@@ -199,15 +212,22 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus }) {
         <button type="button" className="adm-link" onClick={() => imprimirComanda(pedido)}>
           <Printer size={14} aria-hidden="true" /> Imprimir comanda
         </button>
-        <button type="button" className="adm-link adm-link--perigo" disabled={ocupado} onClick={cancelar}>
-          <Ban size={14} aria-hidden="true" /> Cancelar pedido
-        </button>
+        {podeCancelar && (
+          <button type="button" className="adm-link adm-link--perigo" disabled={ocupado} onClick={cancelar}>
+            <Ban size={14} aria-hidden="true" /> Cancelar pedido
+          </button>
+        )}
       </div>
     </li>
   );
 }
 
-export default function Pedidos({ token, onSessaoExpirada }) {
+export default function Pedidos({ token, permissoes = {}, onSessaoExpirada }) {
+  const podeCancelar = permissoes.cancelar !== false; // entregador (tipo 5) não cancela
+  const podeLote = Boolean(permissoes.lote); // tipos 1 e 3: vários pedidos de uma vez
+  const [selecionados, setSelecionados] = useState(() => new Set());
+  const [resultadoLote, setResultadoLote] = useState(null);
+  const [processandoLote, setProcessandoLote] = useState(false);
   const [pedidos, setPedidos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -235,6 +255,8 @@ export default function Pedidos({ token, onSessaoExpirada }) {
       }
       conhecidos.current = ids;
       setPedidos(lista);
+      // Pedido que saiu da lista (baixado em outro lugar) sai da seleção
+      setSelecionados((sel) => new Set([...sel].filter((id) => ids.has(id))));
       setErro('');
       setAtualizadoEm(new Date());
     } catch (err) {
@@ -250,6 +272,32 @@ export default function Pedidos({ token, onSessaoExpirada }) {
     const t = setInterval(carregar, ATUALIZAR_A_CADA);
     return () => clearInterval(t);
   }, [carregar]);
+
+  const alternarSelecao = (id) =>
+    setSelecionados((sel) => {
+      const nova = new Set(sel);
+      if (nova.has(id)) nova.delete(id);
+      else nova.add(id);
+      return nova;
+    });
+
+  const aplicarLote = async (status) => {
+    const ids = [...selecionados];
+    const texto = status === 'Baixado' ? 'BAIXAR' : 'marcar SAIU PARA ENTREGA em';
+    if (!window.confirm(`${texto} ${ids.length} pedido(s)? (${ids.map((id) => `#${id}`).join(', ')})`)) return;
+    setProcessandoLote(true);
+    try {
+      const r = await mudarStatusLote(token, ids, status);
+      setResultadoLote(r);
+      setSelecionados(new Set(r.ignorados.map((i) => i.id).filter((id) => pedidos.some((p) => p.id === id))));
+      await carregar();
+    } catch (err) {
+      if (err.status === 401) sairRef.current();
+      else setErro(err.message);
+    } finally {
+      setProcessandoLote(false);
+    }
+  };
 
   // Título da aba avisa quantos pedidos estão abertos
   useEffect(() => {
@@ -348,11 +396,83 @@ export default function Pedidos({ token, onSessaoExpirada }) {
         </p>
       )}
 
+      {podeLote && visiveis.length > 0 && (
+        <label className="adm-check adm-lote__todos">
+          <input
+            type="checkbox"
+            checked={visiveis.every((p) => selecionados.has(p.id))}
+            onChange={(e) => {
+              const marcar = e.target.checked;
+              setSelecionados((sel) => {
+                const nova = new Set(sel);
+                visiveis.forEach((p) => (marcar ? nova.add(p.id) : nova.delete(p.id)));
+                return nova;
+              });
+            }}
+          />
+          Selecionar todos os {visiveis.length} da lista
+        </label>
+      )}
+
+      {resultadoLote && (
+        <div className={`adm-lote__resultado ${resultadoLote.ignorados.length ? 'adm-lote__resultado--aviso' : ''}`} role="status">
+          <p>
+            <strong>
+              {resultadoLote.aplicados.length} pedido(s) {resultadoLote.status === 'Baixado' ? 'baixado(s)' : 'saíram para entrega'}.
+            </strong>
+          </p>
+          {resultadoLote.ignorados.length > 0 && (
+            <ul>
+              {resultadoLote.ignorados.map((i) => (
+                <li key={i.id}>
+                  #{i.id}: {i.motivo}
+                </li>
+              ))}
+            </ul>
+          )}
+          <button type="button" className="adm-link" onClick={() => setResultadoLote(null)}>
+            Fechar
+          </button>
+        </div>
+      )}
+
       <ul className="adm-pedidos">
         {visiveis.map((p) => (
-          <CartaoPedido key={p.id} pedido={p} novo={novos.has(p.id)} ocupado={ocupado === p.id} onStatus={mudarStatus} />
+          <CartaoPedido
+            key={p.id}
+            pedido={p}
+            novo={novos.has(p.id)}
+            ocupado={ocupado === p.id || processandoLote}
+            onStatus={mudarStatus}
+            podeCancelar={podeCancelar}
+            selecionavel={podeLote}
+            selecionado={selecionados.has(p.id)}
+            onSelecionar={alternarSelecao}
+          />
         ))}
       </ul>
+
+      {podeLote && selecionados.size > 0 && (
+        <div className="adm-lote" role="region" aria-label="Ações nos pedidos selecionados">
+          <span className="adm-lote__qtd">
+            {selecionados.size} selecionado{selecionados.size > 1 ? 's' : ''}
+          </span>
+          <button
+            type="button"
+            className="adm-btn adm-btn--rota"
+            disabled={processandoLote}
+            onClick={() => aplicarLote('Em rota de entrega')}
+          >
+            <Bike size={16} aria-hidden="true" /> Saiu para entrega
+          </button>
+          <button type="button" className="adm-btn adm-btn--primario" disabled={processandoLote} onClick={() => aplicarLote('Baixado')}>
+            <CheckCheck size={16} aria-hidden="true" /> Baixar
+          </button>
+          <button type="button" className="adm-btn adm-btn--icone" onClick={() => setSelecionados(new Set())} aria-label="Limpar seleção">
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
     </section>
   );
 }

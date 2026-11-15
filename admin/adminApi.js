@@ -93,3 +93,7 @@ export const linksDasMesas = (token, idempresa) => request(`/admin/empresas/${id
 // Grupo do PDV "só na mesa": todos os produtos dele saem da entrega e da retirada
 export const salvarGrupo = (token, idgrupo, soMesa) =>
   request(`/admin/grupos/${idgrupo}`, { method: 'PUT', body: { soMesa }, token });
+
+// Vários pedidos de uma vez (tipoacesso 1 e 3): "Baixado" ou "Em rota de entrega"
+export const mudarStatusLote = (token, ids, status) =>
+  request('/admin/pedidos/status-lote', { method: 'POST', body: { ids, status }, token });

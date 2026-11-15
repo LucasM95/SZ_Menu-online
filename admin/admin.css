@@ -1068,37 +1068,70 @@
   font-size: 0.85rem;
 }
 
-/* ---------- Entregadores (usuário do painel x funcionário do PDV) ---------- */
-.adm-entregadores__lista {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.adm-entregadores__lista li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 0;
-  border-top: 1px solid var(--borda);
-}
-
-.adm .adm-entregadores__lista label {
-  margin: 0;
-}
-
-.adm .adm-entregadores__lista select {
-  width: auto;
-  min-width: 190px;
-}
-
 .adm-pedido__entregador {
   font-weight: 700;
   color: #1d4ed8;
+}
+
+/* ---------- Seleção de vários pedidos (tipos 1 e 3) ---------- */
+.adm .adm-pedido__check {
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  accent-color: #1d4ed8;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.adm-pedido--selecionado {
+  outline: 3px solid #1d4ed8;
+  outline-offset: -1px;
+}
+
+.adm .adm-lote__todos {
+  margin: 4px 0 10px;
+  font-size: 0.9rem;
+}
+
+.adm-lote {
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #1c1917;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.adm-lote__qtd {
+  font-weight: 800;
+  margin-right: auto;
+}
+
+.adm-lote__resultado {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  font-size: 0.9rem;
+}
+
+.adm-lote__resultado--aviso {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.adm-lote__resultado ul {
+  margin: 6px 0;
+  padding-left: 18px;
 }
