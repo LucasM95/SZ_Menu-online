@@ -14,6 +14,7 @@ import {
   removerFotoPromocao,
   salvarGrupo,
   salvarProduto,
+  criarSenhaPrimeiroAcesso,
   salvarPromocao,
   salvarSessao,
 } from './adminApi';
@@ -26,6 +27,81 @@ const sugestaoNome = (t) => (t && t === t.toUpperCase() ? t[0] + t.slice(1).toLo
 
 // ---------------------------------------------------------------- Login
 
+// Primeiro acesso do entregador: cria a nova senha antes de entrar no painel
+function NovaSenha({ troca, onEntrar, onVoltar }) {
+  const [nova, setNova] = useState('');
+  const [confirmacao, setConfirmacao] = useState('');
+  const [mostrar, setMostrar] = useState(false);
+  const [erro, setErro] = useState('');
+  const [enviando, setEnviando] = useState(false);
+
+  const enviar = async (e) => {
+    e.preventDefault();
+    if (nova.trim().length < 4) {
+      setErro('A senha precisa ter pelo menos 4 caracteres.');
+      return;
+    }
+    if (nova !== confirmacao) {
+      setErro('As duas senhas não são iguais.');
+      return;
+    }
+    setEnviando(true);
+    setErro('');
+    try {
+      onEntrar(await criarSenhaPrimeiroAcesso(troca.tokenTroca, nova, confirmacao));
+    } catch (err) {
+      if (err.status === 401) onVoltar(err.message);
+      else setErro(err.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  return (
+    <main className="adm-login">
+      <form className="adm-login__card" onSubmit={enviar} noValidate>
+        <h1>Crie sua nova senha</h1>
+        <p className="adm-suave">
+          Olá, {troca.nome}! Este é seu primeiro acesso. Crie uma senha só sua: ela também passa a valer no PDV.
+        </p>
+
+        <label htmlFor="adm-nova-senha">Nova senha</label>
+        <input
+          id="adm-nova-senha"
+          type={mostrar ? 'text' : 'password'}
+          autoComplete="new-password"
+          value={nova}
+          onChange={(e) => setNova(e.target.value)}
+          autoFocus
+        />
+
+        <label htmlFor="adm-confirma-senha">Repita a nova senha</label>
+        <input
+          id="adm-confirma-senha"
+          type={mostrar ? 'text' : 'password'}
+          autoComplete="new-password"
+          value={confirmacao}
+          onChange={(e) => setConfirmacao(e.target.value)}
+        />
+
+        <label className="adm-check">
+          <input type="checkbox" checked={mostrar} onChange={(e) => setMostrar(e.target.checked)} />
+          Mostrar a senha
+        </label>
+
+        {erro && <p className="adm-erro" role="alert">{erro}</p>}
+
+        <button type="submit" className="adm-btn adm-btn--primario" disabled={enviando}>
+          {enviando ? 'Salvando…' : 'Salvar e entrar'}
+        </button>
+        <button type="button" className="adm-link" onClick={() => onVoltar('')}>
+          Voltar
+        </button>
+      </form>
+    </main>
+  );
+}
+
 function Login({ onEntrar }) {
   const [filiais, setFiliais] = useState([]);
   const [filial, setFilial] = useState('');
@@ -33,6 +109,7 @@ function Login({ onEntrar }) {
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [troca, setTroca] = useState(null); // primeiro acesso: { tokenTroca, nome }
 
   useEffect(() => {
     carregarEmpresas()
@@ -56,7 +133,13 @@ function Login({ onEntrar }) {
     setEnviando(true);
     setErro('');
     try {
-      onEntrar(await entrar(Number(filial), login.trim(), senha));
+      const r = await entrar(Number(filial), login.trim(), senha);
+      if (r.trocarSenha) {
+        setTroca(r); // primeiro acesso do entregador: cria a nova senha antes de entrar
+        setSenha('');
+      } else {
+        onEntrar(r);
+      }
     } catch (err) {
       setErro(err.message);
       setSenha('');
@@ -64,6 +147,19 @@ function Login({ onEntrar }) {
       setEnviando(false);
     }
   };
+
+  if (troca) {
+    return (
+      <NovaSenha
+        troca={troca}
+        onEntrar={onEntrar}
+        onVoltar={(mensagem) => {
+          setTroca(null);
+          setErro(mensagem);
+        }}
+      />
+    );
+  }
 
   return (
     <main className="adm-login">

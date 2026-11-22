@@ -104,3 +104,7 @@ export const saidaPorNumero = (token, numero) =>
 
 // Entregador: pedidos do caixa (PDV) que ele leu e ainda não foram baixados
 export const pedidosCaixaLidos = (token) => request('/admin/pedidos/caixa-lidos', { token });
+
+// Primeiro acesso do entregador: cria a nova senha (token provisório do login)
+export const criarSenhaPrimeiroAcesso = (tokenTroca, novaSenha, confirmacao) =>
+  request('/admin/senha/primeiro-acesso', { method: 'POST', body: { novaSenha, confirmacao }, token: tokenTroca });
