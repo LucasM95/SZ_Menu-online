@@ -1200,3 +1200,67 @@
   font-size: 1.05rem;
   justify-content: center;
 }
+
+/* ---------- Entregador: pedidos do caixa que ele leu ---------- */
+.adm-caixa-lidos {
+  margin: 8px 0 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--borda);
+}
+
+.adm-caixa-lidos h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.adm-caixa-lidos ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.adm-caixa-lidos__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border-left: 5px solid #1d4ed8;
+  background: #eff6ff;
+}
+
+.adm-caixa-lidos__item--aguardando {
+  border-left-color: #a16207;
+  background: #fffbeb;
+}
+
+.adm-caixa-lidos__item--recusado {
+  border-left-color: #b91c1c;
+  background: #fef2f2;
+}
+
+.adm-caixa-lidos__numero {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.adm-caixa-lidos__situacao {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.adm-caixa-lidos__tempo {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--texto-suave);
+}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ban, Bike, CheckCheck, ChevronDown, Clock, MessageCircle, Printer, QrCode, RefreshCw, Search, Undo2, X } from 'lucide-react';
 import { apenasDigitos, formatarMoeda, linkWhatsapp } from '../utils';
-import { listarPedidos, mudarStatusLote, mudarStatusPedido } from './adminApi';
+import { listarPedidos, mudarStatusLote, mudarStatusPedido, pedidosCaixaLidos } from './adminApi';
 import { imprimirComanda } from './comanda';
 import LeitorQr from './LeitorQr';
 
@@ -225,6 +225,8 @@ function CartaoPedido({ pedido, novo, ocupado, onStatus, podeCancelar = true, se
 export default function Pedidos({ token, permissoes = {}, onSessaoExpirada }) {
   const podeCancelar = permissoes.cancelar !== false; // entregador (tipo 5) não cancela
   const podeLote = Boolean(permissoes.lote); // tipos 1 e 3: vários pedidos de uma vez
+  const ehEntregador = Boolean(permissoes.entregador); // tipo 5: só os pedidos que ele leu
+  const [caixaLidos, setCaixaLidos] = useState([]);
   const [selecionados, setSelecionados] = useState(() => new Set());
   const [resultadoLote, setResultadoLote] = useState(null);
   const [processandoLote, setProcessandoLote] = useState(false);
@@ -244,9 +246,14 @@ export default function Pedidos({ token, permissoes = {}, onSessaoExpirada }) {
 
   const carregar = useCallback(async () => {
     try {
-      const lista = await listarPedidos(token);
+      const [lista, doCaixa] = await Promise.all([
+        listarPedidos(token),
+        ehEntregador ? pedidosCaixaLidos(token) : Promise.resolve([]),
+      ]);
+      setCaixaLidos(doCaixa);
       const ids = new Set(lista.map((p) => p.id));
-      if (conhecidos.current) {
+      // O entregador só vê o que ele mesmo leu: sem bipe de "pedido novo"
+      if (conhecidos.current && !ehEntregador) {
         const chegaram = [...ids].filter((id) => !conhecidos.current.has(id));
         if (chegaram.length) {
           bipe();
@@ -265,7 +272,7 @@ export default function Pedidos({ token, permissoes = {}, onSessaoExpirada }) {
     } finally {
       setCarregando(false);
     }
-  }, [token]);
+  }, [token, ehEntregador]);
 
   useEffect(() => {
     carregar();
@@ -384,16 +391,43 @@ export default function Pedidos({ token, permissoes = {}, onSessaoExpirada }) {
       </div>
 
       <p className="adm-suave adm-explica">
-        Atualiza sozinho a cada 30 segundos e apita quando chega pedido novo.
+        {ehEntregador
+          ? 'Aqui ficam só os pedidos que você marcou como saiu para entrega. Atualiza sozinho a cada 30 segundos.'
+          : 'Atualiza sozinho a cada 30 segundos e apita quando chega pedido novo.'}
         {atualizadoEm && ` Última atualização: ${atualizadoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}.`}
       </p>
 
       {carregando && <p className="adm-suave">Carregando pedidos…</p>}
       {erro && <p className="adm-erro">{erro}</p>}
-      {!carregando && !erro && visiveis.length === 0 && (
+      {!carregando && !erro && visiveis.length === 0 && (!ehEntregador || caixaLidos.length === 0) && (
         <p className="adm-vazio">
-          {termo ? `Nenhum pedido encontrado para "${busca.trim()}".` : 'Nenhum pedido aberto por aqui. 🎉'}
+          {termo
+            ? `Nenhum pedido encontrado para "${busca.trim()}".`
+            : ehEntregador
+              ? 'Nenhum pedido seu em rota. Use "Ler QR Code" para marcar a saída dos pedidos que vai levar.'
+              : 'Nenhum pedido aberto por aqui. 🎉'}
         </p>
+      )}
+
+      {ehEntregador && caixaLidos.length > 0 && (
+        <section className="adm-caixa-lidos" aria-label="Pedidos do caixa que você leu">
+          <h3>Pedidos do caixa que você leu</h3>
+          <ul>
+            {caixaLidos.map((c) => (
+              <li key={c.id} className={`adm-caixa-lidos__item adm-caixa-lidos__item--${c.situacao}`}>
+                <span className="adm-caixa-lidos__numero">Pedido {c.idPedido}</span>
+                <span className="adm-caixa-lidos__situacao">
+                  {c.situacao === 'em_rota' && 'Em rota'}
+                  {c.situacao === 'aguardando' && 'Aguardando o PDV'}
+                  {c.situacao === 'recusado' && `Não aplicado: ${c.motivo}`}
+                </span>
+                <span className="adm-caixa-lidos__tempo">
+                  <Clock size={14} aria-hidden="true" /> {c.lidoEm} · {tempoDecorrido(c.minutos)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {podeLote && visiveis.length > 0 && (

@@ -101,3 +101,6 @@ export const mudarStatusLote = (token, ids, status) =>
 // Entregador digita o número da comanda: o servidor descobre se é pedido do site ou do caixa
 export const saidaPorNumero = (token, numero) =>
   request('/admin/pedidos/saida-numero', { method: 'POST', body: { numero }, token });
+
+// Entregador: pedidos do caixa (PDV) que ele leu e ainda não foram baixados
+export const pedidosCaixaLidos = (token) => request('/admin/pedidos/caixa-lidos', { token });
