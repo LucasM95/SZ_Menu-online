@@ -1135,3 +1135,90 @@
   margin: 6px 0;
   padding-left: 18px;
 }
+
+/* ---------- Saída para entrega: ler QR ou digitar o número ---------- */
+.adm-qr__modos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.adm-qr__modo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #d6d3d1;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.adm-qr__modo--ativo {
+  background: #fff;
+  color: #1c1917;
+}
+
+.adm-qr__digitar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adm-qr__aviso-camera {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #fcd34d;
+}
+
+.adm-qr__origem {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.adm-qr__origem-btn {
+  min-height: 48px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.adm-qr__origem-btn--ativo {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.25);
+}
+
+.adm-qr__rotulo {
+  color: #d6d3d1;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.adm .adm-qr__numero {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 2px;
+  min-height: 64px;
+}
+
+.adm-qr__enviar {
+  min-height: 52px;
+  font-size: 1.05rem;
+  justify-content: center;
+}
