@@ -97,3 +97,7 @@ export const salvarGrupo = (token, idgrupo, soMesa) =>
 // Vários pedidos de uma vez (tipoacesso 1 e 3): "Baixado" ou "Em rota de entrega"
 export const mudarStatusLote = (token, ids, status) =>
   request('/admin/pedidos/status-lote', { method: 'POST', body: { ids, status }, token });
+
+// Entregador digita o número da comanda: o servidor descobre se é pedido do site ou do caixa
+export const saidaPorNumero = (token, numero) =>
+  request('/admin/pedidos/saida-numero', { method: 'POST', body: { numero }, token });

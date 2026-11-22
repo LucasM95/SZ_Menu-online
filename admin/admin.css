@@ -1181,28 +1181,6 @@
   color: #fcd34d;
 }
 
-.adm-qr__origem {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.adm-qr__origem-btn {
-  min-height: 48px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-radius: 10px;
-  background: transparent;
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
-}
-
-.adm-qr__origem-btn--ativo {
-  border-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.25);
-}
-
 .adm-qr__rotulo {
   color: #d6d3d1;
   font-size: 0.85rem;

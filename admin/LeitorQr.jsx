@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import jsQR from 'jsqr';
 import { Bike, Camera, CameraOff, Keyboard, X } from 'lucide-react';
-import { mudarStatusPedido, saidaPorQrCode } from './adminApi';
+import { saidaPorNumero, saidaPorQrCode } from './adminApi';
 
 // Cada aparelho lembra como prefere marcar a saída (celular com câmera ruim abre direto em "digitar")
 const CHAVE_MODO = 'sdz-leitor-modo';
@@ -32,7 +32,6 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
   const [erroCamera, setErroCamera] = useState('');
   const [resultado, setResultado] = useState(null); // { tipo: 'ok' | 'erro', texto }
   const [numero, setNumero] = useState('');
-  const [origem, setOrigem] = useState('site'); // 'site' ou 'caixa' (pedido lançado no PDV)
   const [enviando, setEnviando] = useState(false);
 
   const trocarModo = (novo) => {
@@ -139,16 +138,11 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
 
   const enviarNumero = (e) => {
     e.preventDefault();
-    const id = Number(numero.replace(/\D/g, ''));
-    if (!id || enviando) return;
-    // "P5002" também vale como pedido do caixa, como antes
-    const doCaixa = origem === 'caixa' || /^\s*p/i.test(numero);
+    const digitado = numero.trim();
+    if (!/\d/.test(digitado) || enviando) return;
     setNumero('');
-    registrar(async () => {
-      if (doCaixa) return saidaPorQrCode(token, `P${id}`);
-      await mudarStatusPedido(token, id, 'Em rota de entrega');
-      return { id };
-    });
+    // O servidor descobre se é pedido do site ou do caixa ("P5002" força o caixa)
+    registrar(() => saidaPorNumero(token, digitado));
     campoRef.current?.focus();
   };
 
@@ -198,28 +192,8 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
               <CameraOff size={16} aria-hidden="true" /> {erroCamera}
             </p>
           )}
-          <div className="adm-qr__origem" role="radiogroup" aria-label="De onde é o pedido">
-            <button
-              type="button"
-              role="radio"
-              aria-checked={origem === 'site'}
-              className={`adm-qr__origem-btn ${origem === 'site' ? 'adm-qr__origem-btn--ativo' : ''}`}
-              onClick={() => setOrigem('site')}
-            >
-              Pedido do site
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={origem === 'caixa'}
-              className={`adm-qr__origem-btn ${origem === 'caixa' ? 'adm-qr__origem-btn--ativo' : ''}`}
-              onClick={() => setOrigem('caixa')}
-            >
-              Pedido do caixa
-            </button>
-          </div>
           <label htmlFor="adm-qr-numero" className="adm-qr__rotulo">
-            Número do pedido {origem === 'caixa' ? 'no caixa (PDV)' : 'do site'}
+            Número do pedido (do site ou do caixa)
           </label>
           <input
             id="adm-qr-numero"
@@ -227,14 +201,16 @@ export default function LeitorQr({ token, onLido, onFechar, onSessaoExpirada }) 
             className="adm-qr__numero"
             inputMode="numeric"
             autoComplete="off"
-            placeholder={origem === 'caixa' ? 'Ex.: 5002' : 'Ex.: 104'}
+            placeholder="Ex.: 104"
             value={numero}
             onChange={(e) => setNumero(e.target.value)}
           />
           <button type="submit" className="adm-btn adm-btn--rota adm-qr__enviar" disabled={enviando || !numero.trim()}>
             <Bike size={18} aria-hidden="true" /> {enviando ? 'Enviando…' : 'Saiu para entrega'}
           </button>
-          <p className="adm-qr__ajuda">O número está no topo da comanda. Pode marcar vários pedidos seguidos.</p>
+          <p className="adm-qr__ajuda">
+            O número está na comanda (no topo ou embaixo do QR Code). Pode marcar vários pedidos seguidos.
+          </p>
         </form>
       )}
 
